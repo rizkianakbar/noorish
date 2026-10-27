@@ -30,16 +30,8 @@ export interface MemorizeVerseProps {
  * verse's shape; each is its own button, so a tap checks just that word.
  * Peeked words keep a faint gold underline, marking where help was needed.
  */
-export function MemorizeVerse({
-  verse,
-  hidden,
-  firstWordHint,
-  revealed,
-  onReveal,
-  recitedWord,
-  translation,
-  size = 'normal',
-}: MemorizeVerseProps) {
+export function MemorizeVerse(props: MemorizeVerseProps) {
+  const { verse, hidden, firstWordHint, revealed, onReveal, recitedWord, translation, size = 'normal' } = props;
   const t = useT();
   const reciting = recitedWord !== undefined;
 

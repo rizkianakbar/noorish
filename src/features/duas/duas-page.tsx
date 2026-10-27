@@ -4,7 +4,7 @@ import { BookHeart, CalendarDays, Moon, Sparkles, Sunrise } from 'lucide-react';
 import { useEffect } from 'react';
 import { ChoiceGroup } from '#/components/choice-group.tsx';
 import { Lattice } from '#/components/ornament/lattice.tsx';
-import { PageHeader } from '#/components/page-header.tsx';
+import { PageShell } from '#/components/page-shell.tsx';
 import { useT } from '#/lib/i18n.ts';
 import { usePrefs } from '#/lib/prefs.ts';
 import { duaQueries } from './duas.api.ts';
@@ -20,6 +20,8 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   'selected-dua': <BookHeart />,
 };
 
+type DuasPageProps = { category?: string };
+
 /**
  * Duas and adhkar by occasion, with how many have been said today. Each
  * category has its own URL (`/duas/dzikir-pagi`); `/duas` opens on the one
@@ -27,7 +29,8 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
  * has loaded. The title comes from the root head (`pageHead`), so search
  * engines see the same one.
  */
-export function DuasPage({ category }: { category?: string }) {
+export function DuasPage(props: DuasPageProps) {
+  const { category } = props;
   const t = useT();
   const { language } = usePrefs();
   const navigate = useNavigate();
@@ -47,67 +50,64 @@ export function DuasPage({ category }: { category?: string }) {
   }, [hash, duas.data]);
 
   return (
-    <main id="main-content" className="min-w-0 grow">
-      <div className="mx-auto max-w-2xl px-4 pt-2 pb-40 sm:px-6 sm:pt-10">
-        <PageHeader title={t.duas} />
-        {current && (
-          // Scrolls sideways on phones rather than wrapping onto a second row.
-          <div className="-mx-4 mt-5 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:overflow-visible sm:px-0">
-            <ChoiceGroup
-              label={t.duas}
-              value={current.slug}
-              onChange={(slug) =>
-                void navigate({ to: '/duas/$category', params: { category: DUA_URL_SLUGS[slug] }, replace: true })
-              }
-              options={categories.map((c) => ({
-                value: c.slug,
-                label: c.name[language],
-                icon: CATEGORY_ICONS[c.slug],
-              }))}
-              className="w-max flex-nowrap sm:w-auto sm:flex-wrap"
-            />
-          </div>
-        )}
+    <PageShell title={t.duas}>
+      {current && (
+        // Scrolls sideways on phones rather than wrapping onto a second row.
+        <div className="-mx-4 mt-5 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:overflow-visible sm:px-0">
+          <ChoiceGroup
+            label={t.duas}
+            value={current.slug}
+            onChange={(slug) =>
+              void navigate({ to: '/duas/$category', params: { category: DUA_URL_SLUGS[slug] }, replace: true })
+            }
+            options={categories.map((c) => ({
+              value: c.slug,
+              label: c.name[language],
+              icon: CATEGORY_ICONS[c.slug],
+            }))}
+            className="w-max flex-nowrap sm:w-auto sm:flex-wrap"
+          />
+        </div>
+      )}
 
-        {current && (
-          <section
-            // Keys differ from the list's below: siblings sharing a key leave stale copies behind.
-            key={`header-${current.slug}`}
-            className="dark relative mt-5 animate-in overflow-hidden rounded-[1.75rem] bg-(--ornament-field) px-6 py-6 text-foreground ring-1 ring-gold/30 duration-300 fade-in">
-            <Lattice className="opacity-60" />
-            <div className="relative flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <h2 className="font-serif text-2xl">{current.name[language]}</h2>
-                <p className="mt-1 text-sm text-muted-foreground">{t.duaCategoryHints[current.slug]}</p>
-              </div>
-              <p dir="rtl" lang="ar" className="shrink-0 font-kufi text-2xl text-gold">
-                {CATEGORY_ARABIC[current.slug]}
+      {current && (
+        <section
+          // Keys differ from the list's below: siblings sharing a key leave stale copies behind.
+          key={`header-${current.slug}`}
+          className="dark relative mt-5 animate-in overflow-hidden rounded-[1.75rem] bg-(--ornament-field) px-6 py-6 text-foreground ring-1 ring-gold/30 duration-300 fade-in">
+          <Lattice className="opacity-60" />
+          <div className="relative flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <h2 className="font-serif text-2xl">{current.name[language]}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{t.duaCategoryHints[current.slug]}</p>
+            </div>
+            <p dir="rtl" lang="ar" className="shrink-0 font-kufi text-2xl text-gold">
+              {CATEGORY_ARABIC[current.slug]}
+            </p>
+          </div>
+          {duas.data && (
+            <div className="relative mt-5">
+              <span className="block h-1.5 overflow-hidden rounded-full bg-foreground/10">
+                <span
+                  className="block h-full rounded-full bg-gold transition-[width] duration-500"
+                  style={{ width: `${(doneCount / duas.data.length) * 100}%` }}
+                />
+              </span>
+              <p className="mt-2 text-xs text-muted-foreground tabular-nums">
+                {t.saidToday(doneCount, duas.data.length)}
               </p>
             </div>
-            {duas.data && (
-              <div className="relative mt-5">
-                <span className="block h-1.5 overflow-hidden rounded-full bg-foreground/10">
-                  <span
-                    className="block h-full rounded-full bg-gold transition-[width] duration-500"
-                    style={{ width: `${(doneCount / duas.data.length) * 100}%` }}
-                  />
-                </span>
-                <p className="mt-2 text-xs text-muted-foreground tabular-nums">
-                  {t.saidToday(doneCount, duas.data.length)}
-                </p>
-              </div>
-            )}
-          </section>
-        )}
+          )}
+        </section>
+      )}
 
-        {(index.isError || duas.isError) && <p className="mt-6 text-sm text-destructive">{t.duasLoadError}</p>}
-        <div key={`list-${current?.slug}`} className="mt-5 animate-in space-y-4 duration-300 fade-in">
-          {duas.data?.map((dua, i) => (
-            <DuaCard key={dua.id} dua={dua} number={i + 1} said={said[dua.id] ?? 0} />
-          ))}
-        </div>
-        <p className="mt-10 text-center text-xs text-muted-foreground">{t.duasCredit}</p>
+      {(index.isError || duas.isError) && <p className="mt-6 text-sm text-destructive">{t.duasLoadError}</p>}
+      <div key={`list-${current?.slug}`} className="mt-5 animate-in space-y-4 duration-300 fade-in">
+        {duas.data?.map((dua, i) => (
+          <DuaCard key={dua.id} dua={dua} number={i + 1} said={said[dua.id] ?? 0} />
+        ))}
       </div>
-    </main>
+      <p className="mt-10 text-center text-xs text-muted-foreground">{t.duasCredit}</p>
+    </PageShell>
   );
 }

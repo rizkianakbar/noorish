@@ -104,3 +104,47 @@ export async function registerServiceWorker() {
     if (acceptedUpdate) window.location.reload();
   });
 }
+
+/**
+ * Longest the splash waits for the page and then its fonts; past that the
+ * page shows as it is rather than keep the reader waiting.
+ */
+const PAGE_WAIT_MS = 3000;
+const FONT_WAIT_MS = 1200;
+
+/**
+ * Resolves once the page component has rendered: route code loads on its
+ * own, so the app frame can mount before the page inside it exists.
+ */
+function pageRendered(): Promise<void> {
+  const started = performance.now();
+  return new Promise((resolve) => {
+    const check = () => {
+      if (document.getElementById('main-content') || performance.now() - started > PAGE_WAIT_MS) resolve();
+      else requestAnimationFrame(check);
+    };
+    check();
+  });
+}
+
+let leaving = false;
+
+/**
+ * Fade the splash out once the page under it is ready: rendered, fonts
+ * loaded (so nothing reflows mid-fade) and a frame painted. Safe to call
+ * more than once.
+ */
+export function hideSplash() {
+  const splash = document.getElementById('splash');
+  if (!splash || leaving) return;
+  leaving = true;
+  if (getComputedStyle(splash).display === 'none') return;
+
+  void pageRendered()
+    .then(() => Promise.race([document.fonts.ready, new Promise((resolve) => setTimeout(resolve, FONT_WAIT_MS))]))
+    .then(() => {
+      // Two frames: the first lets the page paint under the splash, the
+      // second starts the fade from a settled frame instead of mid-layout.
+      requestAnimationFrame(() => requestAnimationFrame(() => (splash.dataset.state = 'out')));
+    });
+}

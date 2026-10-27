@@ -222,7 +222,7 @@ export interface ReminderState {
   snooze: { id: string; until: number } | null;
 }
 
-export function prayerId(name: PrayerName, start: Date): string {
+function prayerId(name: PrayerName, start: Date): string {
   return `${name}@${start.toISOString()}`;
 }
 

@@ -1,5 +1,5 @@
 import { Check, Link2 } from 'lucide-react';
-import { memo, useState } from 'react';
+import { useState } from 'react';
 import { starOutline } from '#/components/ornament/geometry.ts';
 import { useT } from '#/lib/i18n.ts';
 import { cn } from '#/lib/utils.ts';
@@ -7,10 +7,13 @@ import type { Hadith } from './hadith.types.ts';
 
 const COPIED_MS = 1600;
 
+type NumberStarProps = { n: number };
+
 /**
  * The hadith's number in an eight-point star, like the index markers on home.
  */
-function NumberStar({ n }: { n: number }) {
+function NumberStar(props: NumberStarProps) {
+  const { n } = props;
   return (
     <span className="relative inline-flex size-10 shrink-0 items-center justify-center">
       <svg viewBox="0 0 40 40" aria-hidden="true" className="absolute inset-0 size-full">
@@ -25,12 +28,15 @@ function NumberStar({ n }: { n: number }) {
   );
 }
 
+type HadithCardProps = { hadith: Hadith; reference: string };
+
 /**
  * One hadith: its number and reference, the Arabic (often long with its
  * chain of narrators, so folded to a few lines until opened), the
  * translation, and the scholars' gradings where the source has them.
  */
-export const HadithCard = memo(function HadithCard({ hadith, reference }: { hadith: Hadith; reference: string }) {
+export function HadithCard(props: HadithCardProps) {
+  const { hadith, reference } = props;
   const t = useT();
   const [arabicOpen, setArabicOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -100,4 +106,4 @@ export const HadithCard = memo(function HadithCard({ hadith, reference }: { hadi
       )}
     </article>
   );
-});
+}

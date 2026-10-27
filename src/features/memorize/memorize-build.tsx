@@ -34,15 +34,14 @@ function gapWidth(word: BuildWord, arabic: boolean): string {
   return `${em}em`;
 }
 
-const goldButton = 'h-12 rounded-full bg-gold text-base text-lapis hover:bg-gold/85';
-
 /**
  * Build the verse (or its meaning) from a word bank, like Duolingo: some
  * words are gaps, anywhere in the verse; tap tiles to fill them in order,
  * tap a placed word to send it back, then Check. A used tile leaves its
  * outline in the bank, so nothing jumps while the reader works.
  */
-export function MemorizeBuild({ words, part, pool, seed, onContinue, onListenAgain }: MemorizeBuildProps) {
+export function MemorizeBuild(props: MemorizeBuildProps) {
+  const { words, part, pool, seed, onContinue, onListenAgain } = props;
   const t = useT();
   const hidden = useMemo(() => hiddenWords(seed, words.length), [seed, words.length]);
   const answer = useMemo(() => hidden.map((i) => words[i]), [hidden, words]);
@@ -160,7 +159,12 @@ export function MemorizeBuild({ words, part, pool, seed, onContinue, onListenAga
       )}
 
       {status === 'building' && (
-        <Button size="lg" className={cn(goldButton, 'w-full')} disabled={!full} onClick={check}>
+        <Button
+          size="lg"
+          variant="gold"
+          className="h-12 w-full rounded-full text-base"
+          disabled={!full}
+          onClick={check}>
           {t.check}
         </Button>
       )}
@@ -173,7 +177,7 @@ export function MemorizeBuild({ words, part, pool, seed, onContinue, onListenAga
             </span>
             {t.correct}
           </p>
-          <Button size="lg" className={cn(goldButton, 'w-full')} onClick={onContinue}>
+          <Button size="lg" variant="gold" className="h-12 w-full rounded-full text-base" onClick={onContinue}>
             {t.continue}
           </Button>
         </div>
@@ -219,7 +223,7 @@ export function MemorizeBuild({ words, part, pool, seed, onContinue, onListenAga
               <Headphones data-icon="inline-start" />
               {t.listenAgain}
             </Button>
-            <Button size="lg" className={cn(goldButton, 'flex-1')} onClick={retry}>
+            <Button size="lg" variant="gold" className="h-12 flex-1 rounded-full text-base" onClick={retry}>
               <RotateCcw data-icon="inline-start" />
               {t.tryAgain}
             </Button>

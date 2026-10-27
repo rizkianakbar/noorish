@@ -3,28 +3,23 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useServerFn } from '@tanstack/react-start';
 import { Loader2 } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
-import { z } from 'zod';
+import type { z } from 'zod';
 import { Button } from '#/components/ui/button.tsx';
 import { Field, FieldError, FieldLabel } from '#/components/ui/field.tsx';
 import { Textarea } from '#/components/ui/textarea.tsx';
 import { useT } from '#/lib/i18n.ts';
 import { deleteNoteFn, notesQueries, saveNoteFn } from '#/server/notes.functions.ts';
-import { noteInputSchema } from '#/server/schemas.ts';
+import { noteFormSchema } from './notes.lib.ts';
 
-// The server's own rule for a note body, so the form can't accept what saving would reject.
-const noteFormSchema = z.object({ body: noteInputSchema.shape.body });
-
-export function NoteEditor({
-  surah,
-  verse,
-  initialBody,
-  onDone,
-}: {
+type NoteEditorProps = {
   surah: number;
   verse: number;
   initialBody: string;
   onDone: () => void;
-}) {
+};
+
+export function NoteEditor(props: NoteEditorProps) {
+  const { surah, verse, initialBody, onDone } = props;
   const t = useT();
   const queryClient = useQueryClient();
   const form = useForm<z.infer<typeof noteFormSchema>>({

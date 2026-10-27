@@ -6,7 +6,10 @@ import { useChapters } from '#/lib/quran/data.ts';
 import { cn } from '#/lib/utils.ts';
 import type { PlanSummary } from './plans.lib.ts';
 
-export function PlanBar({ value, className }: { value: number; className?: string }) {
+type PlanBarProps = { value: number; className?: string };
+
+export function PlanBar(props: PlanBarProps) {
+  const { value, className } = props;
   return (
     <span className={cn('block h-1 overflow-hidden rounded-full bg-border', className)}>
       <span className="block h-full bg-gold transition-[width]" style={{ width: `${Math.min(1, value) * 100}%` }} />
@@ -14,10 +17,13 @@ export function PlanBar({ value, className }: { value: number; className?: strin
   );
 }
 
+type PlanContinueProps = { summary: PlanSummary; className?: string };
+
 /**
  * Link to where the reader left off in today's portion.
  */
-export function PlanContinue({ summary, className }: { summary: PlanSummary; className?: string }) {
+export function PlanContinue(props: PlanContinueProps) {
+  const { summary, className } = props;
   const t = useT();
   const chapter = useChapters().data?.[(summary.next?.surah ?? 1) - 1];
   if (!summary.next) return null;
@@ -39,10 +45,13 @@ export function PlanContinue({ summary, className }: { summary: PlanSummary; cla
   );
 }
 
+type PlanPortionProps = { summary: PlanSummary };
+
 /**
  * Today's pages and how far into them the reader is.
  */
-export function PlanPortion({ summary }: { summary: PlanSummary }) {
+export function PlanPortion(props: PlanPortionProps) {
+  const { summary } = props;
   const t = useT();
   const { portion, portionRead, portionPages } = summary;
   if (!portion) return null;

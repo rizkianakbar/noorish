@@ -3,7 +3,7 @@ import { Link, Navigate, useLocation } from '@tanstack/react-router';
 import { ArrowLeft, ArrowRight, ChevronRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Lattice } from '#/components/ornament/lattice.tsx';
-import { PageHeader } from '#/components/page-header.tsx';
+import { PageShell } from '#/components/page-shell.tsx';
 import { buttonVariants } from '#/components/ui/button.tsx';
 import { Field, FieldLabel } from '#/components/ui/field.tsx';
 import { Input } from '#/components/ui/input.tsx';
@@ -16,16 +16,16 @@ import { ARABIC_COLLECTION_NAMES, expandTopic } from './hadith.lib.ts';
 import type { HadithCollection } from './hadith.types.ts';
 import { HadithCard } from './hadith-card.tsx';
 
-function Shell({ title, children }: { title: string; children: React.ReactNode }) {
+type ShellProps = { title: string; children: React.ReactNode };
+
+function Shell(props: ShellProps) {
+  const { title, children } = props;
   const t = useT();
   return (
-    <main id="main-content" className="min-w-0 grow">
-      <div className="mx-auto max-w-2xl px-4 pt-2 pb-40 sm:px-6 sm:pt-10">
-        <PageHeader title={title} />
-        <div className="mt-6">{children}</div>
-        <p className="mt-10 text-center text-xs text-muted-foreground">{t.hadithCredit}</p>
-      </div>
-    </main>
+    <PageShell title={title}>
+      <div className="mt-6">{children}</div>
+      <p className="mt-10 text-center text-xs text-muted-foreground">{t.hadithCredit}</p>
+    </PageShell>
   );
 }
 
@@ -108,11 +108,14 @@ export function HadithHome() {
   );
 }
 
+type HadithCollectionPageProps = { slug: string };
+
 /**
  * A collection's books. A single-book collection (the forties) goes straight
  * to its hadith.
  */
-export function HadithCollectionPage({ slug }: { slug: string }) {
+export function HadithCollectionPage(props: HadithCollectionPageProps) {
+  const { slug } = props;
   const t = useT();
   const name = useCollectionName();
   const { data, isError } = useQuery(hadithQueries.index());
@@ -180,10 +183,13 @@ export function HadithCollectionPage({ slug }: { slug: string }) {
   );
 }
 
+type HadithBookPageProps = { slug: string; book: number };
+
 /**
  * A book's hadith, loaded from the source's CDN when opened.
  */
-export function HadithBookPage({ slug, book }: { slug: string; book: number }) {
+export function HadithBookPage(props: HadithBookPageProps) {
+  const { slug, book } = props;
   const t = useT();
   const name = useCollectionName();
   const lang = useHadithLanguage();

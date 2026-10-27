@@ -3,19 +3,12 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { Loader2 } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { Button } from '#/components/ui/button.tsx';
 import { Field, FieldError, FieldGroup, FieldLabel } from '#/components/ui/field.tsx';
 import { Input } from '#/components/ui/input.tsx';
 import { requestPlanSync } from '#/features/plans/plans.hooks.ts';
 import { authClient } from '#/lib/auth-client.ts';
-
-const loginSchema = z.object({
-  email: z.email('Enter a valid email address'),
-  password: z.string().min(1, 'Enter your password'),
-});
-
-type LoginValues = z.infer<typeof loginSchema>;
+import { type LoginValues, loginSchema } from './auth.lib.ts';
 
 export function LoginPage() {
   const navigate = useNavigate();

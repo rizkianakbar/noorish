@@ -1,3 +1,4 @@
+import { queryOptions } from '@tanstack/react-query';
 import type { Language } from '#/lib/prefs.ts';
 import { countryForTimezone } from './prayer.lib.ts';
 import type { Place, PlaceResult } from './prayer.types.ts';
@@ -63,3 +64,13 @@ export function currentPlace(): Promise<Place> {
     );
   });
 }
+
+export const placeQueries = {
+  search: (query: string, language: Language) =>
+    queryOptions({
+      queryKey: ['places', language, query],
+      queryFn: () => searchPlaces(query, language),
+      enabled: query.length >= 2,
+      staleTime: Number.POSITIVE_INFINITY,
+    }),
+};

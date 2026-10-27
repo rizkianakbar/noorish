@@ -1,5 +1,5 @@
 import { Check, ChevronDown, RotateCcw } from 'lucide-react';
-import { memo, useState } from 'react';
+import { useState } from 'react';
 import { useT } from '#/lib/i18n.ts';
 import { usePrefs } from '#/lib/prefs.ts';
 import { cn } from '#/lib/utils.ts';
@@ -7,11 +7,14 @@ import { repeatCount } from './duas.lib.ts';
 import { setSaid } from './duas.store.ts';
 import type { Dua } from './duas.types.ts';
 
+type SayButtonProps = { id: string; said: number; total: number };
+
 /**
  * Saying it: a tap counter for a dua said several times (like a tasbih),
  * or a single check for one said once. Either way it ends in "Done".
  */
-function SayButton({ id, said, total }: { id: string; said: number; total: number }) {
+function SayButton(props: SayButtonProps) {
+  const { id, said, total } = props;
   const t = useT();
   const done = said >= total;
 
@@ -55,7 +58,10 @@ function SayButton({ id, said, total }: { id: string; said: number; total: numbe
   );
 }
 
-export const DuaCard = memo(function DuaCard({ dua, number, said }: { dua: Dua; number: number; said: number }) {
+type DuaCardProps = { dua: Dua; number: number; said: number };
+
+export function DuaCard(props: DuaCardProps) {
+  const { dua, number, said } = props;
   const t = useT();
   const { language, latin } = usePrefs();
   const [virtueOpen, setVirtueOpen] = useState(false);
@@ -125,4 +131,4 @@ export const DuaCard = memo(function DuaCard({ dua, number, said }: { dua: Dua; 
       </div>
     </article>
   );
-});
+}

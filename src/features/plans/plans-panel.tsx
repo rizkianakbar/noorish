@@ -1,5 +1,8 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
-import { type FormEvent, useState } from 'react';
+import { useState } from 'react';
+import { Controller, useForm, useWatch } from 'react-hook-form';
+import type { z } from 'zod';
 import { ChoiceGroup } from '#/components/choice-group.tsx';
 import { Button } from '#/components/ui/button.tsx';
 import { Field, FieldLabel } from '#/components/ui/field.tsx';
@@ -8,6 +11,7 @@ import { useT } from '#/lib/i18n.ts';
 import { usePrefs } from '#/lib/prefs.ts';
 import { requestPlanSync, usePlan } from './plans.hooks.ts';
 import { addDays, PLAN_LENGTHS, type PlanSummary } from './plans.lib.ts';
+import { endDateSchema, newPlanSchema } from './plans.schemas.ts';
 import { accountStore, endPlan, setPlanEndDate, startPlan } from './plans.store.ts';
 import type { ReadingPlan } from './plans.types.ts';
 import { PlanBar, PlanContinue, PlanPortion } from './plans-portion.tsx';
@@ -19,82 +23,87 @@ function useLongDate() {
   return (key: string) => format.format(new Date(`${key}T12:00:00`));
 }
 
-function PlanSetup({ today }: { today: string }) {
-  const t = useT();
-  const [length, setLength] = useState<number | 'date'>(30);
-  const [date, setDate] = useState(() => addDays(today, 29));
-  const endDate = length === 'date' ? date : addDays(today, length - 1);
+type PlanSetupProps = {
+  today: string;
+};
 
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    if (endDate < today) return;
+function PlanSetup(props: PlanSetupProps) {
+  const t = useT();
+  const schema = newPlanSchema(props.today);
+  const form = useForm<z.input<typeof schema>, unknown, z.output<typeof schema>>({
+    resolver: zodResolver(schema),
+    mode: 'onChange',
+    defaultValues: { length: 30, date: addDays(props.today, 29) },
+  });
+  const length = useWatch({ control: form.control, name: 'length' });
+  const submit = form.handleSubmit((endDate) => {
     startPlan(endDate);
     requestPlanSync();
-  };
+  });
 
   return (
     <form onSubmit={submit} className="rounded-lg border bg-card p-4">
       <p className="text-sm text-muted-foreground">{t.planIntro}</p>
-      <ChoiceGroup<number | 'date'>
-        label={t.planEndDate}
-        value={length}
-        onChange={setLength}
-        options={[
-          ...PLAN_LENGTHS.map((days) => ({ value: days, label: t.planDays(days) })),
-          { value: 'date' as const, label: `${t.planEndDate}…` },
-        ]}
-        className="mt-4"
+      <Controller
+        name="length"
+        control={form.control}
+        render={({ field }) => (
+          <ChoiceGroup<z.input<typeof schema>['length']>
+            label={t.planEndDate}
+            value={field.value}
+            onChange={field.onChange}
+            options={[
+              ...PLAN_LENGTHS.map((days) => ({ value: days, label: t.planDays(days) })),
+              { value: 'date' as const, label: `${t.planEndDate}…` },
+            ]}
+            className="mt-4"
+          />
+        )}
       />
       {length === 'date' && (
         <Field className="mt-3 w-auto">
           <FieldLabel htmlFor="plan-end-date" className="sr-only">
             {t.planEndDate}
           </FieldLabel>
-          <Input
-            id="plan-end-date"
-            type="date"
-            min={today}
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-auto"
-          />
+          <Input id="plan-end-date" type="date" min={props.today} className="w-auto" {...form.register('date')} />
         </Field>
       )}
-      <Button type="submit" size="lg" className="mt-4" disabled={!endDate || endDate < today}>
+      <Button type="submit" size="lg" className="mt-4" disabled={!form.formState.isValid}>
         {t.startPlan}
       </Button>
     </form>
   );
 }
 
-function PlanActions({ plan, today }: { plan: ReadingPlan; today: string }) {
+type PlanActionsProps = {
+  plan: ReadingPlan;
+  today: string;
+};
+
+function PlanActions(props: PlanActionsProps) {
   const t = useT();
   const [mode, setMode] = useState<'idle' | 'date' | 'end'>('idle');
-  const [date, setDate] = useState(plan.endDate);
+  const form = useForm<{ date: string }>({
+    resolver: zodResolver(endDateSchema(props.today)),
+    mode: 'onChange',
+    defaultValues: { date: props.plan.endDate },
+  });
 
   if (mode === 'date') {
     return (
       <form
         className="flex flex-wrap items-center gap-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (date >= today) setPlanEndDate(date);
+        onSubmit={form.handleSubmit(({ date }) => {
+          setPlanEndDate(date);
           setMode('idle');
-        }}>
+        })}>
         <Field className="w-auto">
           <FieldLabel htmlFor="plan-change-date" className="sr-only">
             {t.planEndDate}
           </FieldLabel>
-          <Input
-            id="plan-change-date"
-            type="date"
-            min={today}
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-auto"
-          />
+          <Input id="plan-change-date" type="date" min={props.today} className="w-auto" {...form.register('date')} />
         </Field>
-        <Button type="submit" size="sm" disabled={!date || date < today}>
+        <Button type="submit" size="sm" disabled={!form.formState.isValid}>
           {t.save}
         </Button>
         <Button type="button" size="sm" variant="ghost" onClick={() => setMode('idle')}>
@@ -132,7 +141,10 @@ function PlanActions({ plan, today }: { plan: ReadingPlan; today: string }) {
   );
 }
 
-function ActivePlan({ plan, summary, today }: { plan: ReadingPlan; summary: PlanSummary; today: string }) {
+type ActivePlanProps = { plan: ReadingPlan; summary: PlanSummary; today: string };
+
+function ActivePlan(props: ActivePlanProps) {
+  const { plan, summary, today } = props;
   const t = useT();
   const longDate = useLongDate();
 
@@ -163,7 +175,10 @@ function ActivePlan({ plan, summary, today }: { plan: ReadingPlan; summary: Plan
   );
 }
 
-function CompletedPlan({ plan }: { plan: ReadingPlan }) {
+type CompletedPlanProps = { plan: ReadingPlan };
+
+function CompletedPlan(props: CompletedPlanProps) {
+  const { plan } = props;
   const t = useT();
   const { language } = usePrefs();
   const finished = new Intl.DateTimeFormat(language, { dateStyle: 'medium' }).format(

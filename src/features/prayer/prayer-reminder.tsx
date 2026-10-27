@@ -84,7 +84,8 @@ export function PrayerReminder() {
                 </blockquote>
                 <Button
                   size="lg"
-                  className="h-11 w-full rounded-full bg-gold text-lapis hover:bg-gold/85"
+                  variant="gold"
+                  className="h-11 w-full rounded-full"
                   onClick={() => {
                     setEncouraging(false);
                     snoozeReminder(due.id, SNOOZE_MINUTES);
@@ -103,7 +104,8 @@ export function PrayerReminder() {
                 </Button>
                 <Button
                   size="lg"
-                  className="h-11 flex-1 rounded-full bg-gold text-lapis hover:bg-gold/85"
+                  variant="gold"
+                  className="h-11 flex-1 rounded-full"
                   onClick={() => {
                     if (!due) return;
                     markPrayed(due.id);

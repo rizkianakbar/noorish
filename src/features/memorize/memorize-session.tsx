@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { ArrowRight, Check, Loader2, Pause, Play, RotateCcw, SlidersHorizontal, Volume2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { ChoiceGroup } from '#/components/choice-group.tsx';
+import { ChoiceGroup, OnOffChoice } from '#/components/choice-group.tsx';
 import { Button, buttonVariants } from '#/components/ui/button.tsx';
 import { usePlayer } from '#/features/audio/audio.hooks.ts';
 import { SettingsRow } from '#/features/settings/settings-controls.tsx';
@@ -49,20 +49,17 @@ function rangeVerses(range: PracticeRange): number[] {
   return Array.from({ length: range.to - range.from + 1 }, (_, i) => range.from + i);
 }
 
-const goldButton = 'h-12 rounded-full bg-gold text-base text-lapis hover:bg-gold/85';
+type ProgressBarsProps = {
+  range: PracticeRange;
+  learned: ReadonlySet<number>;
+  current: number | null;
+};
 
 /**
  * One bar per verse: learned (gold), the one in hand (pale gold), still to come.
  */
-function ProgressBars({
-  range,
-  learned,
-  current,
-}: {
-  range: PracticeRange;
-  learned: ReadonlySet<number>;
-  current: number | null;
-}) {
+function ProgressBars(props: ProgressBarsProps) {
+  const { range, learned, current } = props;
   return (
     <ol className="flex flex-wrap gap-1.5" aria-hidden="true">
       {rangeVerses(range).map((verse) => (
@@ -79,20 +76,18 @@ function ProgressBars({
   );
 }
 
-/**
- * The big round play/pause of the Listen step.
- */
-function ListenButton({
-  playing,
-  loading,
-  onClick,
-  label,
-}: {
+type ListenButtonProps = {
   playing: boolean;
   loading: boolean;
   onClick: () => void;
   label: string;
-}) {
+};
+
+/**
+ * The big round play/pause of the Listen step.
+ */
+function ListenButton(props: ListenButtonProps) {
+  const { playing, loading, onClick, label } = props;
   return (
     <button
       type="button"
@@ -108,10 +103,6 @@ function ListenButton({
 function OptionsPanel() {
   const t = useT();
   const { settings } = memorizeStore.use();
-  const onOff = [
-    { value: 'on' as const, label: t.on },
-    { value: 'off' as const, label: t.translationOff },
-  ];
   return (
     <div className="animate-in divide-y rounded-2xl border bg-card px-5 fade-in slide-in-from-top-1">
       <SettingsRow label={t.listenRepeats}>
@@ -123,38 +114,35 @@ function OptionsPanel() {
         />
       </SettingsRow>
       <SettingsRow label={t.firstWordHint}>
-        <ChoiceGroup
+        <OnOffChoice
           label={t.firstWordHint}
-          value={settings.firstWordHint ? 'on' : 'off'}
-          onChange={(v) => setMemorizeSetting('firstWordHint', v === 'on')}
-          options={onOff}
+          value={settings.firstWordHint}
+          onChange={(on) => setMemorizeSetting('firstWordHint', on)}
         />
       </SettingsRow>
       <SettingsRow label={t.meaning}>
-        <ChoiceGroup
+        <OnOffChoice
           label={t.meaning}
-          value={settings.showMeaning ? 'on' : 'off'}
-          onChange={(v) => setMemorizeSetting('showMeaning', v === 'on')}
-          options={onOff}
+          value={settings.showMeaning}
+          onChange={(on) => setMemorizeSetting('showMeaning', on)}
         />
       </SettingsRow>
     </div>
   );
 }
 
+type SessionDoneProps = {
+  range: PracticeRange;
+  chapter: Chapter | undefined;
+  mode: 'learn' | 'review';
+};
+
 /**
  * The end of a session: memorized (and what to learn next), or reviewed
  * (and when it comes back).
  */
-function SessionDone({
-  range,
-  chapter,
-  mode,
-}: {
-  range: PracticeRange;
-  chapter: Chapter | undefined;
-  mode: 'learn' | 'review';
-}) {
+function SessionDone(props: SessionDoneProps) {
+  const { range, chapter, mode } = props;
   const t = useT();
   const { language } = usePrefs();
   const { passages } = memorizeStore.use();
@@ -178,7 +166,10 @@ function SessionDone({
       </p>
       <div className="mt-7 flex flex-col items-center gap-2">
         {next && (
-          <Link to="/memorize" search={next} className={cn(buttonVariants({ size: 'lg' }), goldButton, 'h-11 px-5')}>
+          <Link
+            to="/memorize"
+            search={next}
+            className={cn(buttonVariants({ size: 'lg', variant: 'gold' }), 'h-11 rounded-full px-5 text-base')}>
             {t.learnNext(passageLabel(chapters?.[next.surah - 1]?.nameSimple, next))}
             <ArrowRight data-icon="inline-end" />
           </Link>
@@ -194,21 +185,20 @@ function SessionDone({
   );
 }
 
+type MemorizeSessionProps = {
+  range: PracticeRange;
+  chapter: Chapter | undefined;
+  mode: 'learn' | 'review';
+};
+
 /**
  * Learning a passage verse by verse (Listen, then Build it from a word bank:
  * its Arabic, its meaning, or both), then reciting all of it (Connect); or
  * reviewing one, which is Connect alone. One thing to do at a time, with the
  * main action always last and widest.
  */
-export function MemorizeSession({
-  range,
-  chapter,
-  mode,
-}: {
-  range: PracticeRange;
-  chapter: Chapter | undefined;
-  mode: 'learn' | 'review';
-}) {
+export function MemorizeSession(props: MemorizeSessionProps) {
+  const { range, chapter, mode } = props;
   const t = useT();
   const prefs = usePrefs();
   const { settings, learning } = memorizeStore.use();
@@ -424,11 +414,8 @@ export function MemorizeSession({
           </div>
           <Button
             size="lg"
-            className={cn(
-              'h-12 w-full rounded-full text-base',
-              onThisVerse && listening.plays >= settings.listenRepeats && goldButton,
-            )}
-            variant={onThisVerse && listening.plays >= settings.listenRepeats ? 'default' : 'outline'}
+            className="h-12 w-full rounded-full text-base"
+            variant={onThisVerse && listening.plays >= settings.listenRepeats ? 'gold' : 'outline'}
             onClick={() =>
               go({ kind: 'build', verse: step.verse, part: settings.practise === 'meaning' ? 'meaning' : 'arabic' })
             }>
@@ -451,7 +438,8 @@ export function MemorizeSession({
           {mode === 'learn' ? (
             <Button
               size="lg"
-              className={cn(goldButton, 'w-full')}
+              variant="gold"
+              className="h-12 w-full rounded-full text-base"
               onClick={() => {
                 completePassage(range);
                 go({ kind: 'done' });
@@ -474,7 +462,8 @@ export function MemorizeSession({
               </Button>
               <Button
                 size="lg"
-                className={cn(goldButton, 'flex-1')}
+                variant="gold"
+                className="h-12 flex-1 rounded-full text-base"
                 onClick={() => {
                   recordReview(range, true);
                   go({ kind: 'done' });

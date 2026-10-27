@@ -18,7 +18,8 @@ export const SITE_URL = 'https://noorish.rzknkbr.xyz';
 const SITE_NAME = 'Noorish';
 
 // 'and', not '&': link-preview tools count the escaped `&amp;` against the ~60 limit.
-const HOME_TITLE = 'Noorish: Read the Quran Word by Word, with Tafsir and Audio';
+// Leads with "Noorish Quran", the name people search the site by.
+const HOME_TITLE = 'Noorish Quran: Read the Quran Word by Word, with Tafsir and Audio';
 const HOME_DESCRIPTION =
   'Read all 114 surahs of the Quran in Arabic with word-by-word meanings, English and Indonesian translations, Ibn Kathir tafsir, and verse-by-verse recitation.';
 /**
@@ -104,9 +105,19 @@ function homeHead(): Head {
             '@id': `${SITE_URL}/#website`,
             url: `${SITE_URL}/`,
             name: SITE_NAME,
+            // Google's site name in results comes from these.
+            alternateName: ['Noorish Quran', 'Noorish: Quran, Hadith & Doa'],
             description: HOME_DESCRIPTION,
             inLanguage: ['en', 'id'],
+            publisher: { '@id': `${SITE_URL}/#organization` },
             dateModified: LAST_MODIFIED,
+          },
+          {
+            '@type': 'Organization',
+            '@id': `${SITE_URL}/#organization`,
+            name: SITE_NAME,
+            url: `${SITE_URL}/`,
+            logo: `${SITE_URL}/icon-512.png`,
           },
           {
             '@type': 'WebApplication',

@@ -69,7 +69,7 @@ function unreadPages(set: VerseSet): number[] {
  * is today's. Fixed once per day (see `withToday`), so reading doesn't
  * shrink the target as you go.
  */
-export function portionFor(plan: ReadingPlan, today: string): PlanDay | null {
+function portionFor(plan: ReadingPlan, today: string): PlanDay | null {
   if (plan.today?.date === today) return plan.today;
   const unread = unreadPages(decodeVerseSet(plan.read));
   if (unread.length === 0) return null;

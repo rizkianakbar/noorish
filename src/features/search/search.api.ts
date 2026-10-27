@@ -1,3 +1,4 @@
+import { keepPreviousData, queryOptions } from '@tanstack/react-query';
 import { createStore } from '#/lib/store.ts';
 import type { SearchHit, SearchRequest, SearchResponse } from './search.types.ts';
 
@@ -47,3 +48,17 @@ export function searchVerses(query: string, lang: 'en' | 'id'): Promise<SearchHi
     getWorker().postMessage({ type: 'query', id, query, lang } satisfies SearchRequest);
   });
 }
+
+export const searchQueries = {
+  verses: (query: string, lang: 'en' | 'id') =>
+    queryOptions({
+      queryKey: ['search', lang, query],
+      // Keeps its query, so highlights match the results on screen, not the newer text being searched.
+      queryFn: async () => ({ query, hits: await searchVerses(query, lang) }),
+      enabled: query.length >= 3,
+      // Until the new answer arrives, the previous results stay up.
+      placeholderData: keepPreviousData,
+      // The index never changes while the app is open.
+      staleTime: Number.POSITIVE_INFINITY,
+    }),
+};

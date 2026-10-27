@@ -55,10 +55,6 @@ export function addVerse(set: VerseSet, index: number): void {
   set[index >> 3] |= 1 << (index & 7);
 }
 
-export function removeVerse(set: VerseSet, index: number): void {
-  set[index >> 3] &= ~(1 << (index & 7));
-}
-
 export function unionVerseSets(a: VerseSet, b: VerseSet): VerseSet {
   return a.map((byte, i) => byte | b[i]);
 }

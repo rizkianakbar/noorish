@@ -1,17 +1,21 @@
 import { ArrowLeft } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Lattice } from '#/components/ornament/lattice.tsx';
 import { useGoBack } from '#/hooks/use-go-back.ts';
 import { useT } from '#/lib/i18n.ts';
 import { cn } from '#/lib/utils.ts';
 
+type PageHeaderProps = {
+  title: string;
+};
+
 /**
- * Back and the page title, for pages off the dock (Settings, Prayer times,
- * Qibla, Memorize). On phones Back stays pinned to the top; once the title
- * scrolls away, the reader's running-head band slides in behind it and
+ * Back and the page title. On phones Back stays pinned to the top; once the
+ * title scrolls away, the reader's running-head band slides in behind it and
  * carries the title, so the page always says where you are and how to leave.
  */
-export function PageHeader({ title }: { title: string }) {
+function PageHeader(props: PageHeaderProps) {
+  const { title } = props;
   const t = useT();
   const goBack = useGoBack();
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -63,5 +67,32 @@ export function PageHeader({ title }: { title: string }) {
         {title}
       </h1>
     </>
+  );
+}
+
+type PageShellProps = {
+  title: string;
+  /**
+   * Set the document title here. Pages search engines index leave it to the
+   * root head (`pageHead`), so crawlers and readers see the same title.
+   */
+  ownTitle?: boolean;
+  children: ReactNode;
+};
+
+/**
+ * The frame of a page off the dock (Settings, Prayer times, Qibla, Memorize,
+ * Duas, Hadith): the main landmark, the reading column, and the header.
+ */
+export function PageShell(props: PageShellProps) {
+  const t = useT();
+  return (
+    <main id="main-content" className="min-w-0 grow">
+      {props.ownTitle && <title>{`${props.title} · ${t.appName}`}</title>}
+      <div className="mx-auto max-w-2xl px-4 pt-2 pb-40 sm:px-6 sm:pt-10">
+        <PageHeader title={props.title} />
+        {props.children}
+      </div>
+    </main>
   );
 }

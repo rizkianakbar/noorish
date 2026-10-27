@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { BookOpen } from 'lucide-react';
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
@@ -6,7 +6,7 @@ import { Input } from '#/components/ui/input.tsx';
 import { useT } from '#/lib/i18n.ts';
 import { dockStore, resolveTranslation, usePrefs } from '#/lib/prefs.ts';
 import { useChapters } from '#/lib/quran/data.ts';
-import { searchIndexStore, searchVerses, warmSearch } from './search.api.ts';
+import { searchIndexStore, searchQueries, warmSearch } from './search.api.ts';
 import { normalizeLatin, parseQuery } from './search.lib.ts';
 import { DuaResults, HadithResults, useDuaHadithSearch } from './search-duas-hadith.tsx';
 
@@ -54,16 +54,7 @@ export function SearchPanel() {
 
   useEffect(warmSearch, []);
 
-  const search = useQuery({
-    queryKey: ['search', lang, deferred],
-    // Keeps its query, so highlights match the results on screen, not the newer text being searched.
-    queryFn: async () => ({ query: deferred, hits: await searchVerses(deferred, lang) }),
-    enabled: deferred.length >= 3,
-    // Until the new answer arrives, the previous results stay up.
-    placeholderData: keepPreviousData,
-    // The index never changes while the app is open.
-    staleTime: Number.POSITIVE_INFINITY,
-  });
+  const search = useQuery(searchQueries.verses(deferred, lang));
   const found = deferred.length >= 3 ? search.data : undefined;
   const results = found?.hits ?? [];
   // Duas and hadith search from two letters ("doa" alone browses the categories).

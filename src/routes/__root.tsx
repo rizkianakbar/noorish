@@ -5,8 +5,7 @@ import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from '@tanst
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
 import type { ReactNode } from 'react';
 import { AppShell } from '#/components/app-shell.tsx';
-import { IOS_SPLASH_SCREENS } from '#/features/pwa/pwa-screens.ts';
-import { SPLASH_CSS, SPLASH_STAR } from '#/features/pwa/pwa-splash.ts';
+import { IOS_SPLASH_SCREENS, SPLASH_CSS, SPLASH_STAR } from '#/features/pwa/pwa.constants.ts';
 import { arabicFontFiles, criticalFontFiles } from '#/lib/fonts.ts';
 import { pageHead } from '#/lib/seo.ts';
 import appCss from '#/styles.css?url';
@@ -64,8 +63,12 @@ export const Route = createRootRouteWithContext<RouterContext>()({
           crossOrigin: 'anonymous' as const,
           href,
         })),
+        // Google's results show a raster favicon only at a multiple of 48px; the .ico is for
+        // browsers and crawlers that ask for it by name. Rendered by `bun pwa:splash`.
+        { rel: 'icon', href: '/favicon.ico', sizes: '48x48' },
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
-        { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon-32.png' },
+        { rel: 'icon', type: 'image/png', sizes: '96x96', href: '/favicon-96.png' },
+        { rel: 'icon', type: 'image/png', sizes: '192x192', href: '/icon-192.png' },
         { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
         { rel: 'manifest', href: '/manifest.webmanifest' },
         // iOS launch screens, one per screen size; the same art as the in-app splash.

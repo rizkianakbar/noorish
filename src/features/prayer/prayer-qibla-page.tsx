@@ -26,12 +26,15 @@ function polar(deg: number, r: number) {
   return { x: 150 + r * Math.cos(rad), y: 150 + r * Math.sin(rad) };
 }
 
+type QiblaDialProps = { bearing: number; heading: number | null; aligned: boolean };
+
 /**
  * A compass rose with the Kaaba on its rim. With a heading the rose turns so
  * its N is true north and the mark at the top is where the phone points;
  * without one it sits still, N up.
  */
-function QiblaDial({ bearing, heading, aligned }: { bearing: number; heading: number | null; aligned: boolean }) {
+function QiblaDial(props: QiblaDialProps) {
+  const { bearing, heading, aligned } = props;
   const kaaba = polar(bearing, 104);
 
   return (
@@ -100,7 +103,10 @@ function QiblaDial({ bearing, heading, aligned }: { bearing: number; heading: nu
   );
 }
 
-function Qibla({ place }: { place: Place }) {
+type QiblaProps = { place: Place };
+
+function Qibla(props: QiblaProps) {
+  const { place } = props;
   const t = useT();
   const { language } = usePrefs();
   const compass = useCompass();

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { LocateFixed, MapPin } from 'lucide-react';
 import { useDeferredValue, useState } from 'react';
 import { Button } from '#/components/ui/button.tsx';
@@ -6,53 +6,42 @@ import { Field, FieldLabel } from '#/components/ui/field.tsx';
 import { Input } from '#/components/ui/input.tsx';
 import { useT } from '#/lib/i18n.ts';
 import { usePrefs } from '#/lib/prefs.ts';
-import { currentPlace, LocationError, searchPlaces } from './prayer.api.ts';
+import { currentPlace, LocationError, placeQueries } from './prayer.api.ts';
 import { setPrayerSetting } from './prayer.store.ts';
 import type { Place } from './prayer.types.ts';
+
+type PrayerLocationPickerProps = { onDone?: () => void };
 
 /**
  * Choose where prayer times and the qibla are for: the device's position,
  * or a city searched by name. `onDone` runs once one is chosen.
  */
-export function PrayerLocationPicker({ onDone }: { onDone?: () => void }) {
+export function PrayerLocationPicker(props: PrayerLocationPickerProps) {
+  const { onDone } = props;
   const t = useT();
   const { language } = usePrefs();
-  const [locating, setLocating] = useState(false);
-  const [locateError, setLocateError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const deferred = useDeferredValue(query.trim());
 
-  const cities = useQuery({
-    queryKey: ['places', language, deferred],
-    queryFn: () => searchPlaces(deferred, language),
-    enabled: deferred.length >= 2,
-    staleTime: Number.POSITIVE_INFINITY,
-  });
+  const cities = useQuery(placeQueries.search(deferred, language));
 
   const choose = (place: Place) => {
     setPrayerSetting('place', place);
     onDone?.();
   };
 
-  const locate = async () => {
-    setLocating(true);
-    setLocateError(null);
-    try {
-      choose(await currentPlace());
-    } catch (error) {
-      setLocateError(
-        error instanceof LocationError && error.reason === 'denied' ? t.locationDenied : t.locationUnavailable,
-      );
-    } finally {
-      setLocating(false);
-    }
-  };
+  const locate = useMutation({ mutationFn: currentPlace, onSuccess: choose });
+  const locateError =
+    locate.error &&
+    (locate.error instanceof LocationError && locate.error.reason === 'denied'
+      ? t.locationDenied
+      : t.locationUnavailable);
 
   return (
     <div className="space-y-4">
-      <Button size="lg" onClick={locate} disabled={locating} className="w-full sm:w-auto">
+      <Button size="lg" onClick={() => locate.mutate()} disabled={locate.isPending} className="w-full sm:w-auto">
         <LocateFixed data-icon="inline-start" />
-        {locating ? t.locating : t.useMyLocation}
+        {locate.isPending ? t.locating : t.useMyLocation}
       </Button>
       {locateError && <p className="text-sm text-muted-foreground">{locateError}</p>}
 

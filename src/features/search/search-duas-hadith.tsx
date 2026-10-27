@@ -50,7 +50,10 @@ export function useDuaHadithSearch(query: ParsedQuery, enabled: boolean) {
   };
 }
 
-function SectionHeading({ icon, children }: { icon: React.ReactNode; children: string }) {
+type SectionHeadingProps = { icon: React.ReactNode; children: string };
+
+function SectionHeading(props: SectionHeadingProps) {
+  const { icon, children } = props;
   return (
     <h3 className="sticky top-0 z-10 flex items-center gap-2 border-b bg-popover/95 px-5 py-2 text-xs font-medium tracking-[0.14em] text-gold-ink uppercase backdrop-blur [&_svg]:size-3.5">
       {icon}
@@ -61,7 +64,10 @@ function SectionHeading({ icon, children }: { icon: React.ReactNode; children: s
 
 const row = 'block border-b px-5 py-3 text-sm transition-colors hover:bg-muted';
 
-export function DuaResults({ results }: { results: ReturnType<typeof useDuaHadithSearch> }) {
+type DuaResultsProps = { results: ReturnType<typeof useDuaHadithSearch> };
+
+export function DuaResults(props: DuaResultsProps) {
+  const { results } = props;
   const t = useT();
   const { language } = usePrefs();
   if (!results.duas.length && !results.browseDuas.length) return null;
@@ -93,7 +99,10 @@ export function DuaResults({ results }: { results: ReturnType<typeof useDuaHadit
   );
 }
 
-export function HadithResults({ results }: { results: ReturnType<typeof useDuaHadithSearch> }) {
+type HadithResultsProps = { results: ReturnType<typeof useDuaHadithSearch> };
+
+export function HadithResults(props: HadithResultsProps) {
+  const { results } = props;
   const t = useT();
   const name = (slug: string, fallback: string) =>
     t.hadithCollections[slug as keyof typeof t.hadithCollections] ?? fallback;

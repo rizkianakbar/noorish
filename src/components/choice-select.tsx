@@ -21,14 +21,8 @@ export interface ChoiceSelectProps<T extends string | number> {
  * Pick one of many options from a list: shadcn's select, with the chosen
  * option's label shown in the trigger.
  */
-export function ChoiceSelect<T extends string | number>({
-  id,
-  label,
-  value,
-  options,
-  onChange,
-  className,
-}: ChoiceSelectProps<T>) {
+export function ChoiceSelect<T extends string | number>(props: ChoiceSelectProps<T>) {
+  const { id, label, value, options, onChange, className } = props;
   return (
     <Select<T> items={options} value={value} onValueChange={(next) => next !== null && onChange(next)}>
       <SelectTrigger id={id} aria-label={label} className={cn('pressable h-9 min-w-40', className)}>

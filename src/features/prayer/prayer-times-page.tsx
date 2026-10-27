@@ -1,4 +1,4 @@
-import { ChoiceGroup } from '#/components/choice-group.tsx';
+import { ChoiceGroup, OnOffChoice } from '#/components/choice-group.tsx';
 import { ChoiceSelect } from '#/components/choice-select.tsx';
 import { SettingsRow } from '#/features/settings/settings-controls.tsx';
 import { useT } from '#/lib/i18n.ts';
@@ -10,7 +10,10 @@ import { setPrayerSetting } from './prayer.store.ts';
 import type { MethodId, Place, PrayerSettings } from './prayer.types.ts';
 import { PrayerPageShell } from './prayer-page-shell.tsx';
 
-function PrayerTimes({ place }: { place: Place }) {
+type PrayerTimesProps = { place: Place };
+
+function PrayerTimes(props: PrayerTimesProps) {
+  const { place } = props;
   const t = useT();
   const { language } = usePrefs();
   const { day, now, settings, method } = usePrayerDay();
@@ -89,14 +92,10 @@ function PrayerTimes({ place }: { place: Place }) {
           />
         </SettingsRow>
         <SettingsRow label={t.prayerReminders} hint={t.prayerRemindersHint}>
-          <ChoiceGroup
+          <OnOffChoice
             label={t.prayerReminders}
-            value={settings.reminders ? 'on' : 'off'}
-            onChange={(v) => setPrayerSetting('reminders', v === 'on')}
-            options={[
-              { value: 'on', label: t.on },
-              { value: 'off', label: t.translationOff },
-            ]}
+            value={settings.reminders}
+            onChange={(on) => setPrayerSetting('reminders', on)}
           />
         </SettingsRow>
         <SettingsRow label={t.asrTime}>

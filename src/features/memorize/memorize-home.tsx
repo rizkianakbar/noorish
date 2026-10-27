@@ -1,6 +1,8 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowRight, RotateCcw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { ChoiceGroup } from '#/components/choice-group.tsx';
 import { ChoiceSelect } from '#/components/choice-select.tsx';
 import { Button, buttonVariants } from '#/components/ui/button.tsx';
@@ -11,25 +13,24 @@ import { dateKey } from '#/lib/progress.ts';
 import type { Chapter } from '#/lib/quran/types.ts';
 import { cn } from '#/lib/utils.ts';
 import { daysUntilDue, duePassages, nextPassage, passageId, passageLabel } from './memorize.lib.ts';
+import { passageSchema } from './memorize.schemas.ts';
 import { memorizeStore, removePassage, setMemorizeSetting, stopLearning } from './memorize.store.ts';
 import type { PracticeRange, Practise } from './memorize.types.ts';
+
+type DeletableRowProps = {
+  label: string;
+  question: string;
+  onDelete: () => void;
+  children: React.ReactNode;
+};
 
 /**
  * A row that can be deleted: a trash button beside it, and on press an inline
  * "are you sure" in the row's place (never a browser dialog), like ending a
  * reading plan.
  */
-function DeletableRow({
-  label,
-  question,
-  onDelete,
-  children,
-}: {
-  label: string;
-  question: string;
-  onDelete: () => void;
-  children: React.ReactNode;
-}) {
+function DeletableRow(props: DeletableRowProps) {
+  const { label, question, onDelete, children } = props;
   const t = useT();
   const [confirming, setConfirming] = useState(false);
 
@@ -62,58 +63,92 @@ function DeletableRow({
   );
 }
 
-function SectionTitle({ children }: { children: string }) {
+type SectionTitleProps = { children: string };
+
+function SectionTitle(props: SectionTitleProps) {
+  const { children } = props;
   return <h2 className="mb-3 text-xs font-medium tracking-[0.16em] text-gold-ink uppercase">{children}</h2>;
 }
 
 /**
  * Choose a passage to learn: a surah, and the verses within it.
  */
-function PassagePicker({ chapters, initial }: { chapters: Chapter[]; initial: PracticeRange }) {
+type PassagePickerProps = {
+  chapters: Chapter[];
+  initial: PracticeRange;
+};
+
+function PassagePicker(props: PassagePickerProps) {
+  const { chapters } = props;
   const t = useT();
   const navigate = useNavigate();
-  const [range, setRange] = useState(initial);
   const { settings } = memorizeStore.use();
-  const count = chapters[range.surah - 1]?.versesCount ?? 1;
-  const verses = Array.from({ length: count }, (_, i) => ({ value: i + 1, label: String(i + 1) }));
+  const versesIn = (surah: number) => chapters[surah - 1]?.versesCount;
+  const form = useForm<PracticeRange>({ resolver: zodResolver(passageSchema(versesIn)), defaultValues: props.initial });
+  const [surah, from] = useWatch({ control: form.control, name: ['surah', 'from'] });
+  const verses = Array.from({ length: versesIn(surah) ?? 1 }, (_, i) => ({ value: i + 1, label: String(i + 1) }));
 
   return (
     <form
       className="rounded-2xl border bg-card p-5"
-      onSubmit={(e) => {
-        e.preventDefault();
-        void navigate({ to: '/memorize', search: range });
-      }}>
+      onSubmit={form.handleSubmit((range) => navigate({ to: '/memorize', search: range }))}>
       <FieldGroup className="gap-4">
         <Field>
           <FieldLabel htmlFor="memorize-surah">{t.memorizeSurah}</FieldLabel>
-          <ChoiceSelect
-            id="memorize-surah"
-            value={range.surah}
-            onChange={(surah) => setRange({ surah, from: 1, to: Math.min(chapters[surah - 1]?.versesCount ?? 1, 5) })}
-            options={chapters.map((c) => ({ value: c.number, label: `${c.number}. ${c.nameSimple}` }))}
-            className="w-full"
+          <Controller
+            name="surah"
+            control={form.control}
+            render={({ field }) => (
+              <ChoiceSelect
+                id="memorize-surah"
+                value={field.value}
+                onChange={(next) => {
+                  // A new surah starts at its first verses: up to five, a good first passage.
+                  field.onChange(next);
+                  form.setValue('from', 1);
+                  form.setValue('to', Math.min(versesIn(next) ?? 1, 5));
+                }}
+                options={chapters.map((c) => ({ value: c.number, label: `${c.number}. ${c.nameSimple}` }))}
+                className="w-full"
+              />
+            )}
           />
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field>
             <FieldLabel htmlFor="memorize-from">{t.memorizeFrom}</FieldLabel>
-            <ChoiceSelect
-              id="memorize-from"
-              value={range.from}
-              onChange={(from) => setRange((prev) => ({ ...prev, from, to: Math.max(prev.to, from) }))}
-              options={verses}
-              className="w-full min-w-0"
+            <Controller
+              name="from"
+              control={form.control}
+              render={({ field }) => (
+                <ChoiceSelect
+                  id="memorize-from"
+                  value={field.value}
+                  onChange={(next) => {
+                    field.onChange(next);
+                    // The range's end follows its start rather than falling before it.
+                    if (form.getValues('to') < next) form.setValue('to', next);
+                  }}
+                  options={verses}
+                  className="w-full min-w-0"
+                />
+              )}
             />
           </Field>
           <Field>
             <FieldLabel htmlFor="memorize-to">{t.memorizeTo}</FieldLabel>
-            <ChoiceSelect
-              id="memorize-to"
-              value={range.to}
-              onChange={(to) => setRange((prev) => ({ ...prev, to }))}
-              options={verses.filter((v) => v.value >= range.from)}
-              className="w-full min-w-0"
+            <Controller
+              name="to"
+              control={form.control}
+              render={({ field }) => (
+                <ChoiceSelect
+                  id="memorize-to"
+                  value={field.value}
+                  onChange={field.onChange}
+                  options={verses.filter((v) => v.value >= from)}
+                  className="w-full min-w-0"
+                />
+              )}
             />
           </Field>
         </div>
@@ -140,11 +175,14 @@ function PassagePicker({ chapters, initial }: { chapters: Chapter[]; initial: Pr
   );
 }
 
+type MemorizeHomeProps = { chapters: Chapter[] };
+
 /**
  * The Memorize home: what's due for review first (reviewing is what makes
  * it stay), then the passage in progress, a new one, and all that's memorized.
  */
-export function MemorizeHome({ chapters }: { chapters: Chapter[] }) {
+export function MemorizeHome(props: MemorizeHomeProps) {
+  const { chapters } = props;
   const t = useT();
   const { language } = usePrefs();
   const { learning, passages } = memorizeStore.use();

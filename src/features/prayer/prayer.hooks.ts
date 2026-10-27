@@ -6,7 +6,7 @@ import { prayerStore } from './prayer.store.ts';
  * The current time, refreshed on the boundary of every `stepMs` (a minute by
  * default), so a countdown ticks over together with the clock.
  */
-export function useNow(stepMs = 60_000): Date {
+function useNow(stepMs = 60_000): Date {
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {

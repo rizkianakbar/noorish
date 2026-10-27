@@ -17,7 +17,10 @@ import { useChapters } from '#/lib/quran/data.ts';
 const tile =
   'pressable group flex min-w-0 flex-col items-center gap-2 rounded-2xl border bg-card px-2 py-4 text-center hover:border-gold/50 focus-visible:outline-2 focus-visible:outline-gold';
 
-function TileBody({ icon, label, detail }: { icon: ReactNode; label: string; detail: string }) {
+type TileBodyProps = { icon: ReactNode; label: string; detail: string };
+
+function TileBody(props: TileBodyProps) {
+  const { icon, label, detail } = props;
   return (
     <>
       <span className="flex size-11 items-center justify-center rounded-full bg-gold/12 text-gold-ink ring-1 ring-gold/25 transition-colors group-hover:bg-gold/20 [&_svg]:size-5">

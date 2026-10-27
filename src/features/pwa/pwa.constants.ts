@@ -1,4 +1,38 @@
-import { IOS_SPLASH_SCREENS } from './pwa-screens.ts';
+/**
+ * iOS shows a launch image only when one matches the screen exactly (CSS
+ * size and pixel ratio, portrait). Without one the installed app opens on
+ * a blank screen. Rendered by `bun pwa:splash`; linked from the root head.
+ */
+const SCREENS: [width: number, height: number, scale: number][] = [
+  [440, 956, 3], // iPhone 16/17 Pro Max
+  [420, 912, 3], // iPhone Air
+  [402, 874, 3], // iPhone 16/17 Pro, 17
+  [430, 932, 3], // iPhone 14/15 Pro Max, 15/16 Plus
+  [393, 852, 3], // iPhone 14/15 Pro, 15, 16
+  [428, 926, 3], // iPhone 12/13 Pro Max, 14 Plus
+  [390, 844, 3], // iPhone 12, 13, 14, 12/13 Pro
+  [375, 812, 3], // iPhone X, XS, 11 Pro, 12/13 mini
+  [414, 896, 3], // iPhone XS Max, 11 Pro Max
+  [414, 896, 2], // iPhone XR, 11
+  [414, 736, 3], // iPhone 6–8 Plus
+  [375, 667, 2], // iPhone 6–8, SE (2nd, 3rd)
+  [1032, 1376, 2], // iPad Pro 13" (M4)
+  [1024, 1366, 2], // iPad Pro 12.9", iPad Air 13"
+  [834, 1210, 2], // iPad Pro 11" (M4)
+  [834, 1194, 2], // iPad Pro 11"
+  [820, 1180, 2], // iPad Air
+  [744, 1133, 2], // iPad mini (6th, 7th)
+  [768, 1024, 2], // older iPads
+];
+
+export const IOS_SPLASH_SCREENS = SCREENS.map(([width, height, scale]) => ({
+  width,
+  height,
+  scale,
+  // PNG: the format Apple documents for launch images (iOS ignored JPEGs).
+  file: `/splash/ios-${width}x${height}@${scale}x.png`,
+  media: `(device-width: ${width}px) and (device-height: ${height}px) and (-webkit-device-pixel-ratio: ${scale}) and (orientation: portrait)`,
+}));
 
 /**
  * The installed app's splash: the lapis ground and the star from the icon.
@@ -48,47 +82,3 @@ ${SCREEN_RULES}
 #splash[data-state=out] svg{transform:scale(1.12);opacity:0;transition:transform .42s cubic-bezier(.2,0,0,1),opacity .3s cubic-bezier(.4,0,1,1)}
 @media (prefers-reduced-motion:reduce){#splash[data-state=out],#splash[data-state=out] svg{transition-duration:.15s;transform:none}}
 `;
-
-/**
- * Longest the splash waits for the page and then its fonts; past that the
- * page shows as it is rather than keep the reader waiting.
- */
-const PAGE_WAIT_MS = 3000;
-const FONT_WAIT_MS = 1200;
-
-/**
- * Resolves once the page component has rendered: route code loads on its
- * own, so the app frame can mount before the page inside it exists.
- */
-function pageRendered(): Promise<void> {
-  const started = performance.now();
-  return new Promise((resolve) => {
-    const check = () => {
-      if (document.getElementById('main-content') || performance.now() - started > PAGE_WAIT_MS) resolve();
-      else requestAnimationFrame(check);
-    };
-    check();
-  });
-}
-
-let leaving = false;
-
-/**
- * Fade the splash out once the page under it is ready: rendered, fonts
- * loaded (so nothing reflows mid-fade) and a frame painted. Safe to call
- * more than once.
- */
-export function hideSplash() {
-  const splash = document.getElementById('splash');
-  if (!splash || leaving) return;
-  leaving = true;
-  if (getComputedStyle(splash).display === 'none') return;
-
-  void pageRendered()
-    .then(() => Promise.race([document.fonts.ready, new Promise((resolve) => setTimeout(resolve, FONT_WAIT_MS))]))
-    .then(() => {
-      // Two frames: the first lets the page paint under the splash, the
-      // second starts the fade from a settled frame instead of mid-layout.
-      requestAnimationFrame(() => requestAnimationFrame(() => (splash.dataset.state = 'out')));
-    });
-}

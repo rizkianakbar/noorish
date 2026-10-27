@@ -3,7 +3,7 @@ import { Dock } from '#/features/dock/dock.tsx';
 import { DockSheet } from '#/features/dock/dock-sheet.tsx';
 import { usePlanSync } from '#/features/plans/plans.hooks.ts';
 import { prayerStore } from '#/features/prayer/prayer.store.ts';
-import { hideSplash } from '#/features/pwa/pwa-splash.ts';
+import { hideSplash } from '#/features/pwa/pwa.lib.ts';
 import { PwaUpdatePrompt } from '#/features/pwa/pwa-update-prompt.tsx';
 import { useT } from '#/lib/i18n.ts';
 import { useApplyPrefs, useGlobalShortcuts, usePrefetchAllSurahs, useServiceWorker } from './app-shell.hooks.ts';

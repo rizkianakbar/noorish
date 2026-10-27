@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { ToggleGroup, ToggleGroupItem } from '#/components/ui/toggle-group.tsx';
+import { useT } from '#/lib/i18n.ts';
 import { cn } from '#/lib/utils.ts';
 
 export interface ChoiceOption<T> {
@@ -23,13 +24,8 @@ export interface ChoiceGroupProps<T extends string | number> {
  * Pick one of a few options, all in view: shadcn's toggle group, single
  * choice. Pressing the chosen option again keeps it (Base UI would clear it).
  */
-export function ChoiceGroup<T extends string | number>({
-  label,
-  value,
-  options,
-  onChange,
-  className,
-}: ChoiceGroupProps<T>) {
+export function ChoiceGroup<T extends string | number>(props: ChoiceGroupProps<T>) {
+  const { label, value, options, onChange, className } = props;
   return (
     <ToggleGroup
       aria-label={label}
@@ -52,5 +48,29 @@ export function ChoiceGroup<T extends string | number>({
         </ToggleGroupItem>
       ))}
     </ToggleGroup>
+  );
+}
+
+type OnOffChoiceProps = {
+  label: string;
+  value: boolean;
+  onChange: (value: boolean) => void;
+};
+
+/**
+ * The common On / Off choice.
+ */
+export function OnOffChoice(props: OnOffChoiceProps) {
+  const t = useT();
+  return (
+    <ChoiceGroup
+      label={props.label}
+      value={props.value ? 'on' : 'off'}
+      onChange={(choice) => props.onChange(choice === 'on')}
+      options={[
+        { value: 'on', label: t.on },
+        { value: 'off', label: t.translationOff },
+      ]}
+    />
   );
 }
