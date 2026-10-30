@@ -3,10 +3,11 @@ import { useEffect, useState } from 'react';
 import { Lattice } from '#/components/ornament/lattice.tsx';
 import { Button } from '#/components/ui/button.tsx';
 import { useT } from '#/lib/i18n.ts';
+import { cn } from '#/lib/utils.ts';
 import { usePrayerDay } from './prayer.hooks.ts';
-import { ARABIC_NAMES, minutesUntil, reminderDue } from './prayer.lib.ts';
-import { markPrayed, reminderStore, snoozeReminder } from './prayer.store.ts';
-import type { PrayerName } from './prayer.types.ts';
+import { ARABIC_NAMES, minutesUntil, prayerKey, reminderDue, SALAH } from './prayer.lib.ts';
+import { markPrayed, prayerLogStore, reminderStore, snoozeReminder } from './prayer.store.ts';
+import type { SalahName } from './prayer.types.ts';
 
 /**
  * Asked again this long after "I'll pray now" or "Not now", if it is still
@@ -17,8 +18,8 @@ const THANKS_MS = 3500;
 
 /**
  * "It's Isha time. Have you prayed?" Asked once per prayer when the app is
- * open during its time. "Yes" thanks and stops asking for that prayer
- * today; "Not yet" encourages, with the time left and Al-Baqarah 2:238, and
+ * open during its time. "Yes" logs it, thanks with the day's five so far,
+ * and stops asking for that prayer; "Not yet" encourages, with the time left and Al-Baqarah 2:238, and
  * checks back later. Warm, never nagging: each answer is final until the
  * snooze ends or the next prayer begins.
  */
@@ -26,9 +27,10 @@ export function PrayerReminder() {
   const t = useT();
   const { day, now } = usePrayerDay();
   const state = reminderStore.use();
+  const log = prayerLogStore.use();
   const [encouraging, setEncouraging] = useState(false);
-  const [thanked, setThanked] = useState<PrayerName | null>(null);
-  const due = day ? reminderDue(day, now, state) : null;
+  const [thanked, setThanked] = useState<{ prayer: SalahName; day: string } | null>(null);
+  const due = day ? reminderDue(day, now, state, log) : null;
 
   useEffect(() => {
     if (!thanked) return;
@@ -36,7 +38,7 @@ export function PrayerReminder() {
     return () => clearTimeout(timer);
   }, [thanked]);
 
-  const prayer = thanked ?? due?.prayer;
+  const prayer = thanked?.prayer ?? due?.prayer;
   if (!prayer) return null;
   const name = t.prayerNames[prayer];
 
@@ -47,12 +49,29 @@ export function PrayerReminder() {
       <Lattice className="opacity-50" />
       <div className="relative px-5 pt-4 pb-5">
         {thanked ? (
-          <p className="flex items-center gap-3 py-1 text-sm">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gold text-lapis [&_svg]:size-4">
+          <div className="flex items-center gap-3 py-1">
+            <span className="flex size-8 shrink-0 animate-in items-center justify-center rounded-full bg-gold text-lapis duration-300 zoom-in-50 [&_svg]:size-4">
               <Check />
             </span>
-            {t.reminderThanks}
-          </p>
+            <div className="min-w-0">
+              <p className="text-sm">{t.reminderThanks}</p>
+              <p className="mt-1.5 flex items-center gap-1.5">
+                {SALAH.map((name) => (
+                  <span
+                    key={name}
+                    aria-hidden="true"
+                    className={cn(
+                      'size-1.5 rounded-full bg-foreground/20',
+                      log[prayerKey(thanked.day, name)] && 'bg-gold',
+                    )}
+                  />
+                ))}
+                <span className="ml-1 text-xs text-muted-foreground">
+                  {t.historyDayCount(dayCount(log, thanked.day))}
+                </span>
+              </p>
+            </div>
+          </div>
         ) : (
           <>
             <div className="flex items-start gap-3">
@@ -109,7 +128,7 @@ export function PrayerReminder() {
                   onClick={() => {
                     if (!due) return;
                     markPrayed(due.id);
-                    setThanked(prayer);
+                    setThanked({ prayer: due.prayer, day: due.id.slice(0, 10) });
                     navigator.vibrate?.(15);
                   }}>
                   {t.reminderYes}
@@ -121,4 +140,8 @@ export function PrayerReminder() {
       </div>
     </div>
   );
+}
+
+function dayCount(log: Record<string, number>, day: string) {
+  return SALAH.filter((name) => log[prayerKey(day, name)]).length;
 }

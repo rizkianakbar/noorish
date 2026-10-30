@@ -44,3 +44,46 @@ export const readingPlanSchema = z.object({
 });
 
 export type ReadingPlan = z.infer<typeof readingPlanSchema>;
+
+/**
+ * A browser's `PushSubscription.toJSON()`. Push services use https endpoints.
+ */
+export const pushSubscriptionSchema = z.object({
+  endpoint: z.url({ protocol: /^https$/ }).max(1000),
+  keys: z.object({
+    p256dh: z.base64url().max(200),
+    auth: z.base64url().max(100),
+  }),
+});
+
+export type PushSubscriptionInput = z.infer<typeof pushSubscriptionSchema>;
+
+const prayerKeySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}:(fajr|dhuhr|asr|maghrib|isha)$/);
+
+/**
+ * What the service worker shows, written on the device in the reader's
+ * language. `prayer` lets "I've prayed" log it from the notification.
+ */
+export const pushPayloadSchema = z.object({
+  title: z.string().min(1).max(120),
+  body: z.string().max(300),
+  prayer: prayerKeySchema,
+  action: z.string().min(1).max(40),
+  lang: z.enum(['en', 'id']),
+});
+
+export type PushPayload = z.infer<typeof pushPayloadSchema>;
+
+/**
+ * A device's notifications for the next two weeks: five adhans a day and up
+ * to four "time is running out" nudges.
+ */
+export const pushScheduleSchema = z.object({
+  subscription: pushSubscriptionSchema,
+  items: z.array(z.object({ sendAt: z.iso.datetime(), payload: pushPayloadSchema })).max(140),
+});
+
+export const pushPrayedSchema = z.object({
+  endpoint: pushSubscriptionSchema.shape.endpoint,
+  prayer: prayerKeySchema,
+});

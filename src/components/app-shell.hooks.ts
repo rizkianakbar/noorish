@@ -123,3 +123,17 @@ export function useServiceWorker() {
     [],
   );
 }
+
+/**
+ * Keep prayer notifications in step (schedule, logged prayers), loading
+ * that code only for readers who turned them on.
+ */
+export function usePrayerPush(enabled: boolean) {
+  useEffect(() => {
+    if (!enabled) return;
+    return onIdle(() => void import('#/features/prayer/prayer.push.ts').then((push) => push.startPrayerPush()), {
+      timeout: 4000,
+      fallbackDelay: 2000,
+    });
+  }, [enabled]);
+}

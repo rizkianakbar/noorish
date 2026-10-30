@@ -1,0 +1,425 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "6b9292cf-de63-4057-abca-25adba790c99",
+  "prevIds": [
+    "b8af39ce-f4c2-4885-ab18-e91446c2e9e9"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "quran_push_schedule"
+      ],
+      "writes": [
+        "s|tbl|public.quran_push_schedule",
+        "n|tbl|public.quran_push_schedule",
+        "e|tbl|public.quran_push_schedule",
+        "n|rel|public.quran_push_schedule",
+        "n|type|public.quran_push_schedule",
+        "n|rel|public.quran_push_schedule_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "quran_push_subscriptions"
+      ],
+      "writes": [
+        "s|tbl|public.quran_push_subscriptions",
+        "n|tbl|public.quran_push_subscriptions",
+        "e|tbl|public.quran_push_subscriptions",
+        "n|rel|public.quran_push_subscriptions",
+        "n|type|public.quran_push_subscriptions",
+        "n|rel|public.quran_push_subscriptions_pkey",
+        "n|rel|public.quran_push_subscriptions_endpoint_key"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "quran_push_schedule",
+        "quran_push_schedule_send_at_idx"
+      ],
+      "writes": [
+        "s|idx|public.quran_push_schedule_send_at_idx",
+        "n|idx|public.quran_push_schedule_send_at_idx",
+        "e|idx|public.quran_push_schedule_send_at_idx",
+        "n|rel|public.quran_push_schedule_send_at_idx"
+      ],
+      "reads": [
+        "n|tbl|public.quran_push_schedule",
+        "n|sch|public",
+        "n|col|public.quran_push_schedule.send_at"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "quran_push_schedule",
+        "quran_push_schedule_subscription_idx"
+      ],
+      "writes": [
+        "s|idx|public.quran_push_schedule_subscription_idx",
+        "n|idx|public.quran_push_schedule_subscription_idx",
+        "e|idx|public.quran_push_schedule_subscription_idx",
+        "n|rel|public.quran_push_schedule_subscription_idx"
+      ],
+      "reads": [
+        "n|tbl|public.quran_push_schedule",
+        "n|sch|public",
+        "n|col|public.quran_push_schedule.subscription_id",
+        "n|col|public.quran_push_schedule.prayer"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "quran_push_schedule"
+      ],
+      "writes": [
+        "s|fk|public.quran_push_schedule.quran_push_schedule_gNdarfDlKQ2I_fkey",
+        "n|fk|public.quran_push_schedule.quran_push_schedule_gNdarfDlKQ2I_fkey",
+        "e|fk|public.quran_push_schedule.quran_push_schedule_gNdarfDlKQ2I_fkey",
+        "n|con|public.quran_push_schedule.quran_push_schedule_gNdarfDlKQ2I_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.quran_push_schedule",
+        "n|sch|public",
+        "n|tbl|public.quran_push_subscriptions",
+        "n|sch|public",
+        "n|col|public.quran_push_schedule.subscription_id",
+        "n|col|public.quran_push_subscriptions.id",
+        "e|uniqueness|public.quran_push_subscriptions.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "quran_push_schedule",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "quran_push_subscriptions",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "quran_push_schedule",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "uuidv7()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "quran_push_schedule",
+        "name": "subscription_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "quran_push_schedule",
+        "name": "prayer",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "quran_push_schedule",
+        "name": "send_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "quran_push_schedule",
+        "name": "payload",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "quran_push_subscriptions",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "uuidv7()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "quran_push_subscriptions",
+        "name": "endpoint",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "quran_push_subscriptions",
+        "name": "p256dh",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "quran_push_subscriptions",
+        "name": "auth",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "quran_push_subscriptions",
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "quran_push_subscriptions",
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "quran_push_schedule",
+        "name": "quran_push_schedule_send_at_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "send_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "quran_push_schedule",
+        "name": "quran_push_schedule_subscription_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "subscription_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "prayer",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "quran_push_schedule",
+        "name": "quran_push_schedule_gNdarfDlKQ2I_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "subscription_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "quran_push_subscriptions",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "quran_push_schedule",
+        "name": "quran_push_schedule_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "quran_push_subscriptions",
+        "name": "quran_push_subscriptions_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "quran_push_subscriptions",
+        "name": "quran_push_subscriptions_endpoint_key",
+        "nameExplicit": false,
+        "columns": [
+          "endpoint"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    }
+  ]
+}

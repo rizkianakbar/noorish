@@ -1,5 +1,12 @@
 export type PrayerName = 'fajr' | 'sunrise' | 'dhuhr' | 'asr' | 'maghrib' | 'isha';
 
+export type SalahName = Exclude<PrayerName, 'sunrise'>;
+
+/**
+ * Prayers the reader logged as prayed: `prayerKey` → when it was logged (ms).
+ */
+export type PrayerLog = Record<string, number>;
+
 export type MethodId =
   | 'kemenag'
   | 'jakim'
@@ -50,6 +57,15 @@ export interface PrayerSettings {
    * Ask "have you prayed?" when the app is opened during a prayer's time.
    */
   reminders: boolean;
+  /**
+   * Push notifications at each adhan, even with the app closed.
+   */
+  notify: boolean;
+  /**
+   * With `notify`: a second one shortly before a prayer's time is over, if
+   * it isn't logged by then.
+   */
+  lastCall: boolean;
 }
 
 export interface PlaceResult {

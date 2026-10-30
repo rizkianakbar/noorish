@@ -8,6 +8,8 @@ import { usePrayerDay } from './prayer.hooks.ts';
 import { ARABIC_NAMES, METHODS, minutesUntil, PRAYERS } from './prayer.lib.ts';
 import { setPrayerSetting } from './prayer.store.ts';
 import type { MethodId, Place, PrayerSettings } from './prayer.types.ts';
+import { PrayerHistory } from './prayer-history.tsx';
+import { PrayerNotifySettings } from './prayer-notify.tsx';
 import { PrayerPageShell } from './prayer-page-shell.tsx';
 
 type PrayerTimesProps = { place: Place };
@@ -78,6 +80,8 @@ function PrayerTimes(props: PrayerTimesProps) {
         )}
       </section>
 
+      <PrayerHistory place={place} day={day} now={now} />
+
       <section className="divide-y border-t">
         <SettingsRow label={t.calculationMethod} htmlFor="prayer-method">
           <ChoiceSelect<PrayerSettings['method']>
@@ -98,6 +102,7 @@ function PrayerTimes(props: PrayerTimesProps) {
             onChange={(on) => setPrayerSetting('reminders', on)}
           />
         </SettingsRow>
+        <PrayerNotifySettings />
         <SettingsRow label={t.asrTime}>
           <ChoiceGroup<PrayerSettings['madhab']>
             label={t.asrTime}
