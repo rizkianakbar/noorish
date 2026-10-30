@@ -16,6 +16,13 @@ const HORIZON_MS = 15 * 24 * 3_600_000;
  */
 const STALE_MS = 10 * 60_000;
 
+function inWindow<T extends { sendAt: string }>(items: T[], now: Date) {
+  return items.filter(({ sendAt }) => {
+    const at = new Date(sendAt).getTime() - now.getTime();
+    return at > -STALE_MS && at < HORIZON_MS;
+  });
+}
+
 export const pushEnabled = Boolean(env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY);
 
 if (pushEnabled) webpush.setVapidDetails(env.VAPID_SUBJECT, env.VAPID_PUBLIC_KEY!, env.VAPID_PRIVATE_KEY!);
@@ -31,10 +38,7 @@ export async function savePushSchedule(
   now = new Date(),
 ) {
   const keys = { p256dh: subscription.keys.p256dh, auth: subscription.keys.auth, updatedAt: now.toISOString() };
-  const due = items.filter(({ sendAt }) => {
-    const at = new Date(sendAt).getTime() - now.getTime();
-    return at > -STALE_MS && at < HORIZON_MS;
-  });
+  const due = inWindow(items, now);
 
   return db.transaction(async (tx) => {
     const [row] = await tx
@@ -71,6 +75,34 @@ export async function cancelPrayerPush(db: Database, endpoint: string, prayer: s
   await db
     .delete(pushSchedule)
     .where(and(inArray(pushSchedule.subscriptionId, subscription), eq(pushSchedule.prayer, prayer)));
+}
+
+/**
+ * Replace what is waiting for one prayer, e.g. with the reminder the reader
+ * asked for. Unlike `savePushSchedule`, only that prayer is touched.
+ */
+export async function replacePrayerPush(
+  db: Database,
+  endpoint: string,
+  prayer: string,
+  items: { sendAt: string; payload: PushPayload }[],
+  now = new Date(),
+) {
+  return db.transaction(async (tx) => {
+    const [subscription] = await tx
+      .select({ id: pushSubscriptions.id })
+      .from(pushSubscriptions)
+      .where(eq(pushSubscriptions.endpoint, endpoint));
+    if (!subscription) return 0;
+    await tx
+      .delete(pushSchedule)
+      .where(and(eq(pushSchedule.subscriptionId, subscription.id), eq(pushSchedule.prayer, prayer)));
+    const due = inWindow(items, now).filter((item) => item.payload.prayer === prayer);
+    if (due.length) {
+      await tx.insert(pushSchedule).values(due.map((item) => ({ subscriptionId: subscription.id, prayer, ...item })));
+    }
+    return due.length;
+  });
 }
 
 export type SendPush = (

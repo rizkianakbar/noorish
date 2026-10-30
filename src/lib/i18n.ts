@@ -139,6 +139,10 @@ const en = {
     `There’s still ${left} left. Pray now, before its time is over, and don’t leave it.`,
   reminderPrayNow: 'OK, I’ll pray now',
   reminderLater: 'Not now',
+  reminderRemindIn: 'Or remind me in',
+  reminderSnoozed: (time: string) => `I’ll remind you at ${time}, in sha Allah.`,
+  pushSnoozeTitle: (prayer: string) => `${prayer}: your reminder`,
+  pushSnoozeBody: (left: string) => `You asked to be reminded. There’s ${left} left to pray.`,
   // Al-Baqarah 2:238, Saheeh International, as in public/quran/2.json.
   reminderVerse:
     'Maintain with care the [obligatory] prayers and [in particular] the middle [i.e., ʿaṣr] prayer and stand before Allāh, devoutly obedient.',
@@ -146,7 +150,8 @@ const en = {
   durationLeft: (minutes: number) => {
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
-    return h ? `${h} h ${m} min` : `${m} min`;
+    if (!h) return `${m} min`;
+    return m ? `${h} h ${m} min` : `${h} h`;
   },
   prayerReminders: 'Prayer reminders',
   prayerRemindersHint: 'When you open Noorish during a prayer’s time, ask whether you’ve prayed.',
@@ -518,13 +523,18 @@ const id: Messages = {
     `Masih ada ${left} lagi. Yuk shalat sekarang, sebelum waktunya habis — jangan ditinggalkan, ya.`,
   reminderPrayNow: 'Oke, aku shalat sekarang',
   reminderLater: 'Nanti',
+  reminderRemindIn: 'Atau ingatkan lagi dalam',
+  reminderSnoozed: (time) => `Nanti aku ingatkan lagi pukul ${time}, in sya Allah.`,
+  pushSnoozeTitle: (prayer) => `Pengingat ${prayer}`,
+  pushSnoozeBody: (left) => `Kamu minta diingatkan. Masih ada ${left} untuk shalat.`,
   // Al-Baqarah 2:238, terjemahan Kemenag, sesuai public/quran/2.json.
   reminderVerse: 'Peliharalah semua salat dan salat wusṭa. Dan laksanakanlah (salat) karena Allah dengan khusyuk.',
   reminderVerseRef: 'Al-Baqarah 2:238',
   durationLeft: (minutes: number) => {
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
-    return h ? `${h} jam ${m} menit` : `${m} menit`;
+    if (!h) return `${m} menit`;
+    return m ? `${h} jam ${m} menit` : `${h} jam`;
   },
   prayerReminders: 'Pengingat shalat',
   prayerRemindersHint: 'Saat Anda membuka Noorish di waktu shalat, tanyakan apakah Anda sudah shalat.',

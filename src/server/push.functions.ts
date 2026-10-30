@@ -1,8 +1,14 @@
 import { createServerFn } from '@tanstack/react-start';
 import { db } from './db.server.ts';
 import { env } from './env.server.ts';
-import { cancelPrayerPush, pushEnabled, removePushSubscription, savePushSchedule } from './push.server.ts';
-import { pushPrayedSchema, pushScheduleSchema, pushSubscriptionSchema } from './schemas.ts';
+import {
+  cancelPrayerPush,
+  pushEnabled,
+  removePushSubscription,
+  replacePrayerPush,
+  savePushSchedule,
+} from './push.server.ts';
+import { pushPrayedSchema, pushPrayerScheduleSchema, pushScheduleSchema, pushSubscriptionSchema } from './schemas.ts';
 
 // No query options and no auth: prayer notifications work signed out, and a
 // device is known only by its push endpoint (see `prayer.push.ts`).
@@ -32,3 +38,10 @@ export const removePushSubscriptionFn = createServerFn({ method: 'POST' })
 export const cancelPrayerPushFn = createServerFn({ method: 'POST' })
   .validator(pushPrayedSchema)
   .handler(({ data }) => cancelPrayerPush(db, data.endpoint, data.prayer));
+
+/**
+ * "Remind me in…": replace one prayer's notifications.
+ */
+export const replacePrayerPushFn = createServerFn({ method: 'POST' })
+  .validator(pushPrayerScheduleSchema)
+  .handler(({ data }) => replacePrayerPush(db, data.endpoint, data.prayer, data.items));

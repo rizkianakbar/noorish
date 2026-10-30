@@ -6,11 +6,12 @@ import {
   cancelPrayerPushFn,
   getPushKeyFn,
   removePushSubscriptionFn,
+  replacePrayerPushFn,
   savePushScheduleFn,
 } from '#/server/push.functions.ts';
 import type { PushPayload } from '#/server/schemas.ts';
-import { ARABIC_NAMES, shiftDay, upcomingPrayers } from './prayer.lib.ts';
-import { markPrayed, prayerLogStore, prayerStore, setPrayerSetting } from './prayer.store.ts';
+import { ARABIC_NAMES, minutesUntil, prayerDay, type ReminderState, shiftDay, upcomingPrayers } from './prayer.lib.ts';
+import { markPrayed, prayerLogStore, prayerStore, reminderStore, setPrayerSetting } from './prayer.store.ts';
 import type { Place, PrayerLog, PrayerSettings } from './prayer.types.ts';
 
 /**
@@ -55,33 +56,55 @@ function urlBase64ToBytes(base64url: string): Uint8Array<ArrayBuffer> {
 
 /**
  * The notifications for the next two weeks, in the reader's language and the
- * place's time. Prayers already logged get none.
+ * place's time: each adhan, the "time is running out" nudge, and the
+ * reminder the reader asked for with "Remind me in…". The prayer whose time
+ * is running keeps what it still has to come. Prayers already logged get none.
  */
-export function buildSchedule(place: Place, settings: PrayerSettings, log: PrayerLog, now: Date) {
+export function buildSchedule(
+  place: Place,
+  settings: PrayerSettings,
+  log: PrayerLog,
+  snooze: ReminderState['snooze'],
+  now: Date,
+) {
   const { language } = prefsStore.get();
   const t = messagesFor(language);
   const time = new Intl.DateTimeFormat(language, { hour: '2-digit', minute: '2-digit', timeZone: place.timezone });
   const items: { sendAt: string; payload: PushPayload }[] = [];
+  const add = (at: Date, payload: PushPayload) => {
+    if (at > now) items.push({ sendAt: at.toISOString(), payload });
+  };
 
-  for (const prayer of upcomingPrayers(place, settings, now, DAYS)) {
+  const { ongoing } = prayerDay(place, settings, now);
+  const prayers = upcomingPrayers(place, settings, now, DAYS);
+  if (ongoing) prayers.unshift(ongoing);
+
+  for (const prayer of prayers) {
     if (log[prayer.key]) continue;
     const name = t.prayerNames[prayer.name];
     const base = { prayer: prayer.key, action: t.pushPrayed, lang: language };
-    items.push({
-      sendAt: prayer.start.toISOString(),
-      payload: {
-        ...base,
-        title: `${name} · ${ARABIC_NAMES[prayer.name]}`,
-        body: t.pushAdhanBody(prayer.name, time.format(prayer.start), time.format(prayer.end)),
-      },
+    add(prayer.start, {
+      ...base,
+      title: `${name} · ${ARABIC_NAMES[prayer.name]}`,
+      body: t.pushAdhanBody(prayer.name, time.format(prayer.start), time.format(prayer.end)),
     });
 
     const minutes = (prayer.end.getTime() - prayer.start.getTime()) / 60_000;
     // Isha runs to Fajr: a nudge before dawn would wake the reader for nothing.
     if (settings.lastCall && prayer.name !== 'isha' && minutes >= MIN_WINDOW_MINUTES) {
-      items.push({
-        sendAt: new Date(prayer.end.getTime() - LAST_CALL_MINUTES * 60_000).toISOString(),
-        payload: { ...base, title: t.pushLastCallTitle(name, LAST_CALL_MINUTES), body: t.pushLastCallBody },
+      add(new Date(prayer.end.getTime() - LAST_CALL_MINUTES * 60_000), {
+        ...base,
+        title: t.pushLastCallTitle(name, LAST_CALL_MINUTES),
+        body: t.pushLastCallBody,
+      });
+    }
+
+    if (snooze?.id === prayer.key && snooze.until < prayer.end.getTime()) {
+      const at = new Date(snooze.until);
+      add(at, {
+        ...base,
+        title: t.pushSnoozeTitle(name),
+        body: t.pushSnoozeBody(t.durationLeft(minutesUntil(prayer.end, at))),
       });
     }
   }
@@ -129,7 +152,7 @@ async function sync(opts: { force?: boolean } = {}) {
   if (!opts.force && last?.signature === signature && Date.now() - last.at < RESYNC_MS) return;
 
   const json = subscription.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } };
-  const items = buildSchedule(place, settings, prayerLogStore.get(), new Date());
+  const items = buildSchedule(place, settings, prayerLogStore.get(), reminderStore.get().snooze, new Date());
   await savePushScheduleFn({ data: { subscription: { endpoint: json.endpoint, keys: json.keys }, items } });
   writeSync({ signature, at: Date.now() });
 }
@@ -139,6 +162,21 @@ async function subscribe() {
   if (!key) return null;
   const registration = await navigator.serviceWorker.ready;
   return registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToBytes(key) });
+}
+
+/**
+ * Re-send just one prayer's notifications, e.g. after "Remind me in…": one
+ * small request instead of the whole two weeks.
+ */
+async function syncPrayer(prayer: string) {
+  const settings = prayerStore.get();
+  if (!settings.notify || !settings.place || Notification.permission !== 'granted') return;
+  const subscription = await currentSubscription();
+  if (!subscription) return;
+  const items = buildSchedule(settings.place, settings, prayerLogStore.get(), reminderStore.get().snooze, new Date());
+  await replacePrayerPushFn({
+    data: { endpoint: subscription.endpoint, prayer, items: items.filter((item) => item.payload.prayer === prayer) },
+  });
 }
 
 export type EnableResult = 'on' | 'denied' | 'unavailable';
@@ -208,6 +246,14 @@ export function startPrayerPush() {
       if (!subscription) return;
       for (const prayer of added) void cancelPrayerPushFn({ data: { endpoint: subscription.endpoint, prayer } });
     });
+  });
+
+  let snooze = reminderStore.get().snooze;
+  reminderStore.subscribe(() => {
+    const next = reminderStore.get().snooze;
+    const changed = next && (next.id !== snooze?.id || next.until !== snooze.until);
+    snooze = next;
+    if (changed) void syncPrayer(next.id).catch(() => {});
   });
 
   navigator.serviceWorker.addEventListener('message', (event) => {

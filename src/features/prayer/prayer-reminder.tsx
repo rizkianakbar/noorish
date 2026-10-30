@@ -1,8 +1,9 @@
-import { Check, X } from 'lucide-react';
+import { BellRing, Check, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Lattice } from '#/components/ornament/lattice.tsx';
 import { Button } from '#/components/ui/button.tsx';
 import { useT } from '#/lib/i18n.ts';
+import { usePrefs } from '#/lib/prefs.ts';
 import { cn } from '#/lib/utils.ts';
 import { usePrayerDay } from './prayer.hooks.ts';
 import { ARABIC_NAMES, minutesUntil, prayerKey, reminderDue, SALAH } from './prayer.lib.ts';
@@ -14,33 +15,56 @@ import type { SalahName } from './prayer.types.ts';
  * that prayer's time.
  */
 const SNOOZE_MINUTES = 20;
+/**
+ * "Remind me in…" choices. Only those that end before the prayer's time
+ * does are offered; with notifications on, the reminder comes as one.
+ */
+const REMIND_IN = [10, 15, 30, 60];
 const THANKS_MS = 3500;
 
 /**
  * "It's Isha time. Have you prayed?" Asked once per prayer when the app is
  * open during its time. "Yes" logs it, thanks with the day's five so far,
- * and stops asking for that prayer; "Not yet" encourages, with the time left and Al-Baqarah 2:238, and
- * checks back later. Warm, never nagging: each answer is final until the
- * snooze ends or the next prayer begins.
+ * and stops asking for that prayer; "Not yet" encourages, with the time left
+ * and Al-Baqarah 2:238, and checks back later: in 20 minutes, or when the
+ * reader picks under "Remind me in" (a notification too, if they're on).
+ * Warm, never nagging: each answer is final until the snooze ends or the
+ * next prayer begins.
  */
 export function PrayerReminder() {
   const t = useT();
-  const { day, now } = usePrayerDay();
+  const { day, now, place } = usePrayerDay();
+  const { language } = usePrefs();
   const state = reminderStore.use();
   const log = prayerLogStore.use();
   const [encouraging, setEncouraging] = useState(false);
   const [thanked, setThanked] = useState<{ prayer: SalahName; day: string } | null>(null);
+  const [snoozed, setSnoozed] = useState<{ prayer: SalahName; until: Date } | null>(null);
   const due = day ? reminderDue(day, now, state, log) : null;
 
   useEffect(() => {
-    if (!thanked) return;
-    const timer = setTimeout(() => setThanked(null), THANKS_MS);
+    if (!thanked && !snoozed) return;
+    const timer = setTimeout(() => {
+      setThanked(null);
+      setSnoozed(null);
+    }, THANKS_MS);
     return () => clearTimeout(timer);
-  }, [thanked]);
+  }, [thanked, snoozed]);
 
-  const prayer = thanked?.prayer ?? due?.prayer;
+  const prayer = thanked?.prayer ?? snoozed?.prayer ?? due?.prayer;
   if (!prayer) return null;
   const name = t.prayerNames[prayer];
+  const minutesLeft = due ? minutesUntil(due.endsAt, now) : 0;
+  const remindIn = REMIND_IN.filter((minutes) => minutes < minutesLeft);
+  const time = new Intl.DateTimeFormat(language, { hour: '2-digit', minute: '2-digit', timeZone: place?.timezone });
+
+  const remindLater = (minutes: number) => {
+    if (!due) return;
+    snoozeReminder(due.id, minutes);
+    setEncouraging(false);
+    setSnoozed({ prayer: due.prayer, until: new Date(Date.now() + minutes * 60_000) });
+    navigator.vibrate?.(10);
+  };
 
   return (
     <div
@@ -48,7 +72,14 @@ export function PrayerReminder() {
       className="dark fixed inset-x-3 top-[calc(0.75rem+env(safe-area-inset-top))] z-50 mx-auto max-w-md animate-in overflow-hidden rounded-[1.5rem] bg-(--ornament-field) text-foreground shadow-[0_18px_50px_-12px_oklch(0.15_0.05_262/0.7)] ring-1 ring-gold/45 duration-300 fade-in slide-in-from-top-3">
       <Lattice className="opacity-50" />
       <div className="relative px-5 pt-4 pb-5">
-        {thanked ? (
+        {snoozed ? (
+          <p className="flex items-center gap-3 py-1 text-sm">
+            <span className="flex size-8 shrink-0 animate-in items-center justify-center rounded-full bg-gold/15 text-gold ring-1 ring-gold/40 duration-300 zoom-in-50 [&_svg]:size-4">
+              <BellRing />
+            </span>
+            {t.reminderSnoozed(time.format(snoozed.until))}
+          </p>
+        ) : thanked ? (
           <div className="flex items-center gap-3 py-1">
             <span className="flex size-8 shrink-0 animate-in items-center justify-center rounded-full bg-gold text-lapis duration-300 zoom-in-50 [&_svg]:size-4">
               <Check />
@@ -94,9 +125,7 @@ export function PrayerReminder() {
 
             {encouraging && due ? (
               <div className="mt-3 animate-in space-y-3 duration-300 fade-in">
-                <p className="text-sm leading-relaxed">
-                  {t.reminderEncourage(t.durationLeft(minutesUntil(due.endsAt, now)))}
-                </p>
+                <p className="text-sm leading-relaxed">{t.reminderEncourage(t.durationLeft(minutesLeft))}</p>
                 <blockquote className="rounded-r-lg border-l-2 border-gold bg-gold/10 px-3.5 py-2.5">
                   <p className="font-serif text-[0.9375rem] leading-relaxed italic">{t.reminderVerse}</p>
                   <cite className="mt-1 block text-xs text-gold not-italic">{t.reminderVerseRef}</cite>
@@ -111,6 +140,20 @@ export function PrayerReminder() {
                   }}>
                   {t.reminderPrayNow}
                 </Button>
+                {remindIn.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="mr-1 text-xs text-muted-foreground">{t.reminderRemindIn}</span>
+                    {remindIn.map((minutes) => (
+                      <button
+                        key={minutes}
+                        type="button"
+                        onClick={() => remindLater(minutes)}
+                        className="pressable h-8 rounded-full px-3 text-xs font-medium tabular-nums ring-1 ring-gold/40 transition-colors [--press-scale:0.94] hover:bg-gold/15 hover:ring-gold">
+                        {t.durationLeft(minutes)}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="mt-4 flex gap-2">

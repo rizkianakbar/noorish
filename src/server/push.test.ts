@@ -5,6 +5,7 @@ import { serverTest } from '#/test/database.ts';
 import {
   cancelPrayerPush,
   removePushSubscription,
+  replacePrayerPush,
   type SendPush,
   savePushSchedule,
   sendDuePush,
@@ -94,5 +95,22 @@ describe('push schedule', () => {
     const { sent, send } = recorder();
     await sendDuePush(db, new Date(NOW.getTime() + 10 * 60_000), send);
     expect(sent).toEqual([]);
+  });
+
+  serverTest('replaces one prayer’s notifications, leaving the rest', async ({ db }) => {
+    const sub = subscription();
+    await savePushSchedule(db, sub, [item(5), item(8, '2001-01-01:maghrib')], NOW);
+
+    // "Remind me in 3 min" for Asr: its old item goes, the new one and Maghrib stay.
+    const asr = { ...item(3), payload: { ...item(3).payload, title: 'Asr: your reminder' } };
+    expect(await replacePrayerPush(db, sub.endpoint, '2001-01-01:asr', [asr, item(4, '2001-01-01:isha')], NOW)).toBe(1);
+
+    const { sent, send } = recorder();
+    await sendDuePush(db, new Date(NOW.getTime() + 9 * 60_000), send);
+    expect(sent.sort()).toEqual(
+      [`${sub.endpoint} 2001-01-01:asr Asr: your reminder`, `${sub.endpoint} 2001-01-01:maghrib Asr`].sort(),
+    );
+    // An unknown device changes nothing.
+    expect(await replacePrayerPush(db, 'https://push.example/unknown', '2001-01-01:asr', [asr], NOW)).toBe(0);
   });
 });

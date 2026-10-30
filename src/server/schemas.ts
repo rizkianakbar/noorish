@@ -78,12 +78,21 @@ export type PushPayload = z.infer<typeof pushPayloadSchema>;
  * A device's notifications for the next two weeks: five adhans a day and up
  * to four "time is running out" nudges.
  */
+const pushItemSchema = z.object({ sendAt: z.iso.datetime(), payload: pushPayloadSchema });
+
 export const pushScheduleSchema = z.object({
   subscription: pushSubscriptionSchema,
-  items: z.array(z.object({ sendAt: z.iso.datetime(), payload: pushPayloadSchema })).max(140),
+  items: z.array(pushItemSchema).max(150),
 });
 
 export const pushPrayedSchema = z.object({
   endpoint: pushSubscriptionSchema.shape.endpoint,
   prayer: prayerKeySchema,
+});
+
+/**
+ * One prayer's notifications: its nudge and the reminder the reader asked for.
+ */
+export const pushPrayerScheduleSchema = pushPrayedSchema.extend({
+  items: z.array(pushItemSchema).max(5),
 });
