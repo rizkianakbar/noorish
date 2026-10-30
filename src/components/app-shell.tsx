@@ -6,7 +6,13 @@ import { prayerStore } from '#/features/prayer/prayer.store.ts';
 import { hideSplash } from '#/features/pwa/pwa.lib.ts';
 import { PwaUpdatePrompt } from '#/features/pwa/pwa-update-prompt.tsx';
 import { useT } from '#/lib/i18n.ts';
-import { useApplyPrefs, useGlobalShortcuts, usePrefetchAllSurahs, useServiceWorker } from './app-shell.hooks.ts';
+import {
+  useApplyPrefs,
+  useGlobalShortcuts,
+  usePrayerPush,
+  usePrefetchAllSurahs,
+  useServiceWorker,
+} from './app-shell.hooks.ts';
 
 // Split out: it brings the prayer-times library, which only readers with a place need.
 const PrayerReminder = lazy(() =>
@@ -26,6 +32,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   usePrefetchAllSurahs();
   usePlanSync();
   useServiceWorker();
+  usePrayerPush(Boolean(prayer.place && prayer.notify));
   // The installed app's splash leaves once the page under it is ready.
   useEffect(hideSplash, []);
 

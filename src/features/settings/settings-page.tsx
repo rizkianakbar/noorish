@@ -6,6 +6,7 @@ import { Slider } from '#/components/ui/slider.tsx';
 import { reciters } from '#/features/audio/audio.api.ts';
 import { play, stop } from '#/features/audio/audio.lib.ts';
 import { prayerStore, setPrayerSetting } from '#/features/prayer/prayer.store.ts';
+import { PrayerNotifySettings } from '#/features/prayer/prayer-notify.tsx';
 import { PwaInstallRow } from '#/features/pwa/pwa-install.tsx';
 import { useT } from '#/lib/i18n.ts';
 import {
@@ -162,6 +163,8 @@ export function SettingsPage() {
             onChange={(on) => setPrayerSetting('reminders', on)}
           />
         </SettingsRow>
+
+        <PrayerNotifySettings />
 
         <PwaInstallRow />
 

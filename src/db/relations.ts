@@ -54,5 +54,17 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.users.id,
     }),
   },
+  pushSubscriptions: {
+    schedule: r.many.pushSchedule({
+      from: r.pushSubscriptions.id,
+      to: r.pushSchedule.subscriptionId,
+    }),
+  },
+  pushSchedule: {
+    subscription: r.one.pushSubscriptions({
+      from: r.pushSchedule.subscriptionId,
+      to: r.pushSubscriptions.id,
+    }),
+  },
   verifications: {},
 }));

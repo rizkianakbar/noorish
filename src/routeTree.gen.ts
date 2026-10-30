@@ -20,6 +20,8 @@ import { Route as DuasCategoryRouteImport } from './routes/duas.$category'
 import { Route as HadithIndexRouteImport } from './routes/hadith.index'
 import { Route as SurahSurahRouteImport } from './routes/surah.$surah'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiPushPrayedRouteImport } from './routes/api/push/prayed'
+import { Route as ApiPushSendRouteImport } from './routes/api/push/send'
 import { Route as HadithCollectionIndexRouteImport } from './routes/hadith.$collection.index'
 import { Route as HadithCollectionBookRouteImport } from './routes/hadith.$collection.$book'
 
@@ -78,6 +80,16 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPushPrayedRoute = ApiPushPrayedRouteImport.update({
+  id: '/api/push/prayed',
+  path: '/api/push/prayed',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPushSendRoute = ApiPushSendRouteImport.update({
+  id: '/api/push/send',
+  path: '/api/push/send',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HadithCollectionIndexRoute = HadithCollectionIndexRouteImport.update({
   id: '/hadith/$collection/',
   path: '/hadith/$collection/',
@@ -101,6 +113,8 @@ export interface FileRoutesByFullPath {
   '/duas/': typeof DuasIndexRoute
   '/hadith/': typeof HadithIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/push/prayed': typeof ApiPushPrayedRoute
+  '/api/push/send': typeof ApiPushSendRoute
   '/hadith/$collection/$book': typeof HadithCollectionBookRoute
   '/hadith/$collection/': typeof HadithCollectionIndexRoute
 }
@@ -116,6 +130,8 @@ export interface FileRoutesByTo {
   '/duas': typeof DuasIndexRoute
   '/hadith': typeof HadithIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/push/prayed': typeof ApiPushPrayedRoute
+  '/api/push/send': typeof ApiPushSendRoute
   '/hadith/$collection/$book': typeof HadithCollectionBookRoute
   '/hadith/$collection': typeof HadithCollectionIndexRoute
 }
@@ -132,6 +148,8 @@ export interface FileRoutesById {
   '/duas/': typeof DuasIndexRoute
   '/hadith/': typeof HadithIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/push/prayed': typeof ApiPushPrayedRoute
+  '/api/push/send': typeof ApiPushSendRoute
   '/hadith/$collection/$book': typeof HadithCollectionBookRoute
   '/hadith/$collection/': typeof HadithCollectionIndexRoute
 }
@@ -149,6 +167,8 @@ export interface FileRouteTypes {
     | '/duas/'
     | '/hadith/'
     | '/api/auth/$'
+    | '/api/push/prayed'
+    | '/api/push/send'
     | '/hadith/$collection/$book'
     | '/hadith/$collection/'
   fileRoutesByTo: FileRoutesByTo
@@ -164,6 +184,8 @@ export interface FileRouteTypes {
     | '/duas'
     | '/hadith'
     | '/api/auth/$'
+    | '/api/push/prayed'
+    | '/api/push/send'
     | '/hadith/$collection/$book'
     | '/hadith/$collection'
   id:
@@ -179,6 +201,8 @@ export interface FileRouteTypes {
     | '/duas/'
     | '/hadith/'
     | '/api/auth/$'
+    | '/api/push/prayed'
+    | '/api/push/send'
     | '/hadith/$collection/$book'
     | '/hadith/$collection/'
   fileRoutesById: FileRoutesById
@@ -195,6 +219,8 @@ export interface RootRouteChildren {
   DuasIndexRoute: typeof DuasIndexRoute
   HadithIndexRoute: typeof HadithIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiPushPrayedRoute: typeof ApiPushPrayedRoute
+  ApiPushSendRoute: typeof ApiPushSendRoute
   HadithCollectionBookRoute: typeof HadithCollectionBookRoute
   HadithCollectionIndexRoute: typeof HadithCollectionIndexRoute
 }
@@ -278,6 +304,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/push/prayed': {
+      id: '/api/push/prayed'
+      path: '/api/push/prayed'
+      fullPath: '/api/push/prayed'
+      preLoaderRoute: typeof ApiPushPrayedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/push/send': {
+      id: '/api/push/send'
+      path: '/api/push/send'
+      fullPath: '/api/push/send'
+      preLoaderRoute: typeof ApiPushSendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/hadith/$collection/': {
       id: '/hadith/$collection/'
       path: '/hadith/$collection'
@@ -307,6 +347,8 @@ const rootRouteChildren: RootRouteChildren = {
   DuasIndexRoute: DuasIndexRoute,
   HadithIndexRoute: HadithIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiPushPrayedRoute: ApiPushPrayedRoute,
+  ApiPushSendRoute: ApiPushSendRoute,
   HadithCollectionBookRoute: HadithCollectionBookRoute,
   HadithCollectionIndexRoute: HadithCollectionIndexRoute,
 }

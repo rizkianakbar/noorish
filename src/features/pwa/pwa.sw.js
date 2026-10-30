@@ -20,6 +20,10 @@
  *   once opens offline.
  * - Never touched: auth, server functions, other origins (the recitation
  *   CDN, the city geocoder). They need the network and must not be cached.
+ * - Prayer notifications (Web Push, see `prayer.push.ts`): shown as sent.
+ *   "I've prayed" logs the prayer without opening the app: the server is
+ *   told (so the "time is running out" nudge is cancelled) and the prayer
+ *   waits in PRAYED_INBOX until the app next runs and adds it to the log.
  */
 
 const VERSION = '__VERSION__';
@@ -32,6 +36,9 @@ const PAGE_CACHE = `noorish-pages-${VERSION}`;
 const DATA_CACHE = 'noorish-quran';
 const HADITH_CACHE = 'noorish-hadith';
 const HADITH_CDN = 'https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/';
+// Kept in step with `prayer.push.ts`.
+const PRAYED_INBOX = 'noorish-prayed';
+const PRAYER_PAGE = '/prayer-times';
 const SHELL = '/';
 /**
  * A page not saved yet, on a weak connection, falls back to the home shell
@@ -55,7 +62,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
-      const keep = new Set([APP_CACHE, PAGE_CACHE, DATA_CACHE, HADITH_CACHE]);
+      const keep = new Set([APP_CACHE, PAGE_CACHE, DATA_CACHE, HADITH_CACHE, PRAYED_INBOX]);
       for (const key of await caches.keys()) if (!keep.has(key)) await caches.delete(key);
       await self.clients.claim();
     })(),
@@ -65,6 +72,50 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
+
+self.addEventListener('push', (event) => {
+  const data = event.data?.json();
+  if (!data) return;
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      // One notification per prayer: the nudge replaces its adhan.
+      tag: data.prayer,
+      renotify: true,
+      icon: '/icon-192.png',
+      lang: data.lang,
+      data: { prayer: data.prayer },
+      actions: [{ action: 'prayed', title: data.action }],
+    }),
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const { prayer } = event.notification.data ?? {};
+  event.waitUntil(event.action === 'prayed' && prayer ? logPrayed(prayer) : openPrayerPage());
+});
+
+async function logPrayed(prayer) {
+  const inbox = await caches.open(PRAYED_INBOX);
+  await inbox.put(`/prayed/${encodeURIComponent(prayer)}`, new Response(String(Date.now())));
+  for (const client of await self.clients.matchAll({ type: 'window' })) client.postMessage({ type: 'PRAYED' });
+  const subscription = await self.registration.pushManager.getSubscription();
+  if (!subscription) return;
+  await fetch('/api/push/prayed', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ endpoint: subscription.endpoint, prayer }),
+  }).catch(() => {});
+}
+
+async function openPrayerPage() {
+  const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+  const open = windows.find((client) => new URL(client.url).origin === self.location.origin);
+  if (!open) return self.clients.openWindow(PRAYER_PAGE);
+  await open.focus();
+  return open.navigate?.(PRAYER_PAGE).catch(() => {});
+}
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;

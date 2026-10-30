@@ -1,7 +1,13 @@
 import { CalculationMethod, CalculationParameters, Coordinates, Madhab, PrayerTimes, Qibla } from 'adhan';
-import type { MethodId, Place, PrayerName, PrayerSettings } from './prayer.types.ts';
+import { dateKey } from '#/lib/progress.ts';
+import type { MethodId, Place, PrayerLog, PrayerName, PrayerSettings, SalahName } from './prayer.types.ts';
 
 export const PRAYERS: PrayerName[] = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
+
+/**
+ * The five daily prayers, the ones that are prayed and kept in the log.
+ */
+export const SALAH: SalahName[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
 
 const KAABA = { lat: 21.4225, lng: 39.8262 };
 
@@ -129,18 +135,18 @@ export interface PrayerDay {
   /**
    * The next prayer to come (never sunrise), tomorrow's Fajr after Isha.
    */
-  next: { name: Exclude<PrayerName, 'sunrise'>; at: Date };
+  next: { name: SalahName; at: Date };
   /**
    * The prayer whose time it is now, or null between Fajr's end (sunrise)
    * and Dhuhr, and before today's Fajr.
    */
-  current: Exclude<PrayerName, 'sunrise'> | null;
+  current: SalahName | null;
   /**
    * The prayer whose time is running, from its adhan to the next one (Fajr's
    * to sunrise). Like `current`, but past midnight it is still last night's
-   * Isha until Fajr. Its start identifies that one prayer.
+   * Isha until Fajr. `key` names that one prayer in the log.
    */
-  ongoing: { name: Exclude<PrayerName, 'sunrise'>; start: Date; end: Date } | null;
+  ongoing: { name: SalahName; start: Date; end: Date; key: string } | null;
 }
 
 export function prayerDay(place: Place, settings: PrayerSettings, now: Date): PrayerDay {
@@ -158,11 +164,77 @@ export function prayerDay(place: Place, settings: PrayerSettings, now: Date): Pr
   let ongoing: PrayerDay['ongoing'] = null;
   if (now < times.fajr) {
     const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
-    ongoing = { name: 'isha', start: timesOn(place, settings, yesterday).isha, end: times.fajr };
+    const start = timesOn(place, settings, yesterday).isha;
+    ongoing = { name: 'isha', start, end: times.fajr, key: prayerKey(dateKey(yesterday), 'isha') };
   } else if (current) {
-    ongoing = { name: current, start: times[current], end: current === 'fajr' ? times.sunrise : next.at };
+    const end = current === 'fajr' ? times.sunrise : next.at;
+    ongoing = { name: current, start: times[current], end, key: prayerKey(dateKey(today), current) };
   }
   return { times, next, current, ongoing };
+}
+
+/**
+ * One prayer in the log: the day its time began, in the place's zone, and
+ * its name, e.g. `2026-10-30:isha`. So last night's Isha is the same prayer
+ * either side of midnight, and a day's row in the history is its five keys.
+ */
+export function prayerKey(day: string, name: SalahName): string {
+  return `${day}:${name}`;
+}
+
+/**
+ * Today's date key in the place's zone.
+ */
+export function todayIn(place: Place, now: Date): string {
+  return dateKey(dateIn(place.timezone, now));
+}
+
+/**
+ * `day` moved by `days` (negative for earlier). Date keys are plain dates,
+ * so this is calendar arithmetic in UTC, safe from DST.
+ */
+export function shiftDay(day: string, days: number): string {
+  const date = new Date(`${day}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+export interface UpcomingPrayer {
+  name: SalahName;
+  key: string;
+  start: Date;
+  /**
+   * When its time is over: the next adhan, Fajr's at sunrise.
+   */
+  end: Date;
+}
+
+/**
+ * Every prayer whose time begins after `now`, over the next `days` days,
+ * for scheduling notifications ahead.
+ */
+export function upcomingPrayers(place: Place, settings: PrayerSettings, now: Date, days: number): UpcomingPrayer[] {
+  const today = dateIn(place.timezone, now);
+  const on = (offset: number) =>
+    timesOn(place, settings, new Date(today.getFullYear(), today.getMonth(), today.getDate() + offset));
+  const result: UpcomingPrayer[] = [];
+  let times = on(0);
+  for (let offset = 0; offset < days; offset++) {
+    const tomorrow = on(offset + 1);
+    const day = shiftDay(dateKey(today), offset);
+    const ends: Record<SalahName, Date> = {
+      fajr: times.sunrise,
+      dhuhr: times.asr,
+      asr: times.maghrib,
+      maghrib: times.isha,
+      isha: tomorrow.fajr,
+    };
+    for (const name of SALAH) {
+      if (times[name] > now) result.push({ name, key: prayerKey(day, name), start: times[name], end: ends[name] });
+    }
+    times = tomorrow;
+  }
+  return result;
 }
 
 /**
@@ -211,34 +283,75 @@ export function minutesUntil(at: Date, now: Date): number {
 }
 
 /**
- * The reader's answers to the prayer reminder: the prayers they said they
- * prayed, and one they asked to be reminded of later. Each prayer is
- * identified by when its time began (see `prayerId`), so every adhan brings
- * a fresh question, five a day, and last night's Isha is the same prayer
- * either side of midnight.
+ * A prayer the reader asked to be reminded of later (see `prayerKey`).
  */
 export interface ReminderState {
-  answered: string[];
   snooze: { id: string; until: number } | null;
 }
 
-function prayerId(name: PrayerName, start: Date): string {
-  return `${name}@${start.toISOString()}`;
-}
-
 /**
- * The prayer to ask about now: the one whose time is running, unless it was
- * answered or is snoozed. With when its time ends (the next adhan; Fajr's at
- * sunrise) and its id for recording the answer.
+ * The prayer to ask about now: the one whose time is running, unless it is
+ * already in the log or is snoozed. Every adhan brings a fresh question,
+ * five a day. With when its time ends and its key for logging the answer.
  */
 export function reminderDue(
   day: PrayerDay,
   now: Date,
   state: ReminderState,
-): { prayer: Exclude<PrayerName, 'sunrise'>; endsAt: Date; id: string } | null {
+  log: PrayerLog,
+): { prayer: SalahName; endsAt: Date; id: string } | null {
   if (!day.ongoing) return null;
-  const id = prayerId(day.ongoing.name, day.ongoing.start);
-  if (state.answered.includes(id)) return null;
+  const { key: id } = day.ongoing;
+  if (log[id]) return null;
   if (state.snooze?.id === id && state.snooze.until > now.getTime()) return null;
   return { prayer: day.ongoing.name, endsAt: day.ongoing.end, id };
+}
+
+export interface HistoryDay {
+  day: string;
+  /**
+   * Each prayer: logged, not logged, or its time hasn't begun yet.
+   */
+  prayers: Record<SalahName, 'prayed' | 'open' | 'upcoming'>;
+  count: number;
+}
+
+/**
+ * The last `days` days of the log, newest first. Today's prayers still to
+ * come are `upcoming`, so they can't be ticked before their time.
+ */
+export function prayerHistory(log: PrayerLog, today: string, day: PrayerDay, now: Date, days: number): HistoryDay[] {
+  return Array.from({ length: days }, (_, i) => {
+    const date = shiftDay(today, -i);
+    let count = 0;
+    const prayers = {} as HistoryDay['prayers'];
+    for (const name of SALAH) {
+      if (log[prayerKey(date, name)]) {
+        prayers[name] = 'prayed';
+        count++;
+      } else prayers[name] = i === 0 && day.times[name] > now ? 'upcoming' : 'open';
+    }
+    return { day: date, prayers, count };
+  });
+}
+
+/**
+ * Days in a row with all five prayers logged, up to today. A day still
+ * under way doesn't break the run: it counts once complete.
+ */
+export function prayerStreak(log: PrayerLog, today: string): { current: number; best: number } {
+  const complete = (day: string) => SALAH.every((name) => log[prayerKey(day, name)]);
+  const days = new Set(Object.keys(log).map((key) => key.slice(0, 10)));
+  let current = 0;
+  for (let day = complete(today) ? today : shiftDay(today, -1); complete(day); day = shiftDay(day, -1)) current++;
+
+  let best = current;
+  for (const day of days) {
+    // Count each run once, from its first day.
+    if (!complete(day) || complete(shiftDay(day, -1))) continue;
+    let length = 0;
+    for (let d = day; complete(d); d = shiftDay(d, 1)) length++;
+    best = Math.max(best, length);
+  }
+  return { current, best };
 }

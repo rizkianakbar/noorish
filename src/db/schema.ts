@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
-import { pgTable, uniqueIndex } from 'drizzle-orm/pg-core';
-import type { PlanDay } from '#/server/schemas.ts';
+import { index, pgTable, uniqueIndex } from 'drizzle-orm/pg-core';
+import type { PlanDay, PushPayload } from '#/server/schemas.ts';
 
 /**
  * Users table for authentication.
@@ -137,4 +137,45 @@ export const readingPlans = pgTable(
     updatedAt: t.timestamp('updated_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
   }),
   (t) => [uniqueIndex('quran_reading_plans_user_idx').on(t.userId)],
+);
+
+/**
+ * A browser's Web Push subscription, one per device that turned on prayer
+ * notifications. Anonymous: the endpoint is the device's address, and
+ * knowing it is what lets a device change its own schedule.
+ */
+export const pushSubscriptions = pgTable('quran_push_subscriptions', (t) => ({
+  id: t.text('id').primaryKey().default(sql`uuidv7()`),
+  endpoint: t.text('endpoint').notNull().unique(),
+  p256dh: t.text('p256dh').notNull(),
+  auth: t.text('auth').notNull(),
+  createdAt: t.timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+  updatedAt: t.timestamp('updated_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}));
+
+/**
+ * Notifications waiting to be sent. The device works out its prayer times
+ * and writes them here, ready to show, so its location never leaves it; the
+ * server only sends what falls due (claimed by deleting it, so two runs
+ * can't send one twice).
+ */
+export const pushSchedule = pgTable(
+  'quran_push_schedule',
+  (t) => ({
+    id: t.text('id').primaryKey().default(sql`uuidv7()`),
+    subscriptionId: t
+      .text('subscription_id')
+      .notNull()
+      .references(() => pushSubscriptions.id, { onDelete: 'cascade' }),
+    /**
+     * The prayer it is for (`2026-10-30:isha`), so logging it cancels the rest.
+     */
+    prayer: t.text('prayer').notNull(),
+    sendAt: t.timestamp('send_at', { withTimezone: true, mode: 'string' }).notNull(),
+    payload: t.jsonb('payload').$type<PushPayload>().notNull(),
+  }),
+  (t) => [
+    index('quran_push_schedule_send_at_idx').on(t.sendAt),
+    index('quran_push_schedule_subscription_idx').on(t.subscriptionId, t.prayer),
+  ],
 );
