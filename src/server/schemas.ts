@@ -46,10 +46,17 @@ export const readingPlanSchema = z.object({
 export type ReadingPlan = z.infer<typeof readingPlanSchema>;
 
 /**
- * A browser's `PushSubscription.toJSON()`. Push services use https endpoints.
+ * A browser's `PushSubscription.toJSON()`. Only the browsers' push services
+ * are accepted: the server POSTs to this URL, so any other host would let
+ * anyone aim it at a site of their choosing.
  */
 export const pushSubscriptionSchema = z.object({
-  endpoint: z.url({ protocol: /^https$/ }).max(1000),
+  endpoint: z
+    .url({
+      protocol: /^https$/,
+      hostname: /(^|\.)(fcm\.googleapis\.com|push\.services\.mozilla\.com|push\.apple\.com|notify\.windows\.com)$/,
+    })
+    .max(1000),
   keys: z.object({
     p256dh: z.base64url().max(200),
     auth: z.base64url().max(100),

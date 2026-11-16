@@ -24,6 +24,8 @@ export const auth = betterAuth({
     requireEmailVerification: false,
     minPasswordLength: 8,
   },
+  // Shared across serverless instances; memory would count per instance.
+  rateLimit: { storage: 'database' },
   // Must stay last: forwards Set-Cookie from server-side auth calls.
   plugins: [tanstackStartCookies()],
 });

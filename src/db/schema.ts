@@ -73,6 +73,17 @@ export const verifications = pgTable('auth_verifications', (t) => ({
 }));
 
 /**
+ * Better Auth's rate-limit counters, kept in the database so every server
+ * instance shares them (in-memory counts are per instance on Vercel).
+ */
+export const rateLimits = pgTable('auth_rate_limits', (t) => ({
+  id: t.text('id').primaryKey().default(sql`uuidv7()`),
+  key: t.text('key').notNull().unique(),
+  count: t.integer('count').notNull(),
+  lastRequest: t.bigint('last_request', { mode: 'number' }).notNull(),
+}));
+
+/**
  * Personal notes (reflections) on a verse. One note per user per verse;
  * saving again replaces the body.
  */
