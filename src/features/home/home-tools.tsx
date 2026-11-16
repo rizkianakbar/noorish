@@ -13,8 +13,9 @@ import { usePrefs } from '#/lib/prefs.ts';
 import { dateKey } from '#/lib/progress.ts';
 import { useChapters } from '#/lib/quran/data.ts';
 
+// Phones: compact tiles (icon over label and value) side by side; wider screens: rows with the icon beside.
 const card =
-  'pressable group flex min-w-0 items-center gap-4 rounded-2xl border bg-card p-4 hover:border-gold/50 focus-visible:outline-2 focus-visible:outline-gold sm:p-5';
+  'pressable group relative flex min-w-0 flex-col items-start gap-2.5 rounded-2xl border bg-card p-3.5 hover:border-gold/50 focus-visible:outline-2 focus-visible:outline-gold sm:flex-row sm:items-center sm:gap-4 sm:p-5';
 const heading = 'text-xs font-medium tracking-[0.18em] text-gold-ink uppercase';
 
 type CardBodyProps = { icon: ReactNode; label: string; value: string; detail?: string };
@@ -23,12 +24,14 @@ function CardBody(props: CardBodyProps) {
   const { icon, label, value, detail } = props;
   return (
     <>
-      <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-gold/12 text-gold-ink ring-1 ring-gold/25 transition-colors group-hover:bg-gold/20 [&_svg]:size-5">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gold/12 text-gold-ink ring-1 ring-gold/25 transition-colors group-hover:bg-gold/20 sm:size-11 [&_svg]:size-4 sm:[&_svg]:size-5">
         {icon}
       </span>
-      <span className="min-w-0">
-        <span className="block text-xs text-muted-foreground">{label}</span>
-        <span className="block truncate font-serif text-lg tabular-nums">{value}</span>
+      <span className="w-full min-w-0">
+        <span className="block truncate text-xs text-muted-foreground">{label}</span>
+        <span className="line-clamp-2 block font-serif text-[0.9375rem] leading-snug tabular-nums sm:truncate sm:text-lg">
+          {value}
+        </span>
         {detail && <span className="block truncate text-xs text-muted-foreground tabular-nums">{detail}</span>}
       </span>
     </>
@@ -49,11 +52,11 @@ export function HomeNow() {
   const dhikr = duaCategories?.find((c) => c.slug === categoryForHour(now.getHours()))?.name[language] ?? t.duas;
 
   return (
-    <section aria-labelledby="home-now" className="mt-10">
+    <section aria-labelledby="home-now" className="mt-8 sm:mt-10">
       <h2 id="home-now" className={heading}>
         {t.now}
       </h2>
-      <div className="mt-3 grid gap-2 sm:grid-cols-3 sm:gap-3">
+      <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-3">
         <Link to="/prayer-times" className={card}>
           <CardBody
             icon={<Clock />}
@@ -92,11 +95,11 @@ export function HomePractice() {
   const chapters = useChapters().data;
 
   return (
-    <section aria-labelledby="home-practice" className="mt-10">
+    <section aria-labelledby="home-practice" className="mt-8 sm:mt-10">
       <h2 id="home-practice" className={heading}>
         {t.practice}
       </h2>
-      <div className="mt-3 grid gap-2 sm:grid-cols-2 sm:gap-3">
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:gap-3">
         <Link to="/memorize" search={{}} className={card}>
           <CardBody
             icon={<Brain />}
@@ -112,7 +115,7 @@ export function HomePractice() {
           {dueCount > 0 && (
             <span
               aria-hidden="true"
-              className="ml-auto flex h-7 min-w-7 shrink-0 items-center justify-center rounded-full bg-primary px-2 text-xs font-semibold text-primary-foreground tabular-nums">
+              className="absolute top-3 right-3 flex h-6 min-w-6 shrink-0 sm:static sm:ml-auto sm:h-7 sm:min-w-7 items-center justify-center rounded-full bg-primary px-2 text-xs font-semibold text-primary-foreground tabular-nums">
               {dueCount}
             </span>
           )}

@@ -36,9 +36,14 @@ export function HomePage() {
       <div className="mx-auto max-w-5xl px-4 pt-6 pb-40 sm:px-8 sm:pt-10">
         <HomeFrontispiece />
         <HomePlanInvite />
-        <HomeNow />
-        <HomeVerseOfDay />
-        <HomePractice />
+        {/* Phones: the tools sit together and the verse follows; wider screens keep the verse between them. */}
+        <div className="flex flex-col">
+          <HomeNow />
+          <div className="order-last sm:order-none">
+            <HomeVerseOfDay />
+          </div>
+          <HomePractice />
+        </div>
 
         <section id="index" aria-labelledby="index-title" className="mt-14 scroll-mt-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
