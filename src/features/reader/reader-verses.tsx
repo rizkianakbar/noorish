@@ -5,7 +5,7 @@ import type { PlayerState } from '#/features/audio/audio.lib.ts';
 import { resolveLatin, resolveTranslation, usePrefs } from '#/lib/prefs.ts';
 import type { Chapter, SurahData, Verse } from '#/lib/quran/types.ts';
 import { groupPages } from './mushaf.lib.ts';
-import { MushafSheet } from './mushaf-sheet.tsx';
+import { MushafSheet, type Recitation } from './mushaf-sheet.tsx';
 import { useNearVerses } from './reader-verses.hooks.ts';
 import type { WordSelection } from './reader-word-popover.tsx';
 import { VerseCard, type VerseCardProps } from './verse-card.tsx';
@@ -28,17 +28,30 @@ function recitationFor(player: PlayerState, surah: number, verse: number): Verse
   return { word: player.word, playing: player.playing, loading: player.loading };
 }
 
+const NOT_RECITING: Recitation = { verse: null, word: null };
+
+/**
+ * Only the page holding the recited verse gets a fresh recitation, so the
+ * other (memoized) sheets skip every word tick.
+ */
 function MushafView({ surahData, chapter }: { surahData: SurahData; chapter: Chapter }) {
   const player = usePlayer();
   const pages = useMemo(() => groupPages(surahData), [surahData]);
-  const recitation =
-    player.surah === surahData.surah ? { verse: player.verse, word: player.word } : { verse: null, word: null };
+  const verse = player.surah === surahData.surah ? player.verse : null;
 
   return (
     <div className="-mx-2 flex animate-in flex-col gap-7 py-4 duration-300 fade-in sm:mx-0">
-      {pages.map((page) => (
-        <MushafSheet key={page.page} page={page} chapter={chapter} recitation={recitation} />
-      ))}
+      {pages.map((page) => {
+        const here = verse !== null && verse >= page.verses[0].n && verse <= (page.verses.at(-1)?.n ?? 0);
+        return (
+          <MushafSheet
+            key={page.page}
+            page={page}
+            chapter={chapter}
+            recitation={here ? { verse, word: player.word } : NOT_RECITING}
+          />
+        );
+      })}
     </div>
   );
 }

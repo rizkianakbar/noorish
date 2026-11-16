@@ -41,7 +41,7 @@ export function ReaderPage({ surah }: { surah: number }) {
 
   useReadingTracker(mainRef, surahData, prefs.focusMode);
   useWarmSurah(surah);
-  useScrollPosition(mainRef, surahData);
+  useScrollPosition(mainRef, surahData, prefs.focusMode);
   useHideChromeOnScroll(mainRef);
   useFollowRecitation(mainRef, surah);
   useReaderShortcuts({ main: mainRef, surah, prev, next, togglePlayback });

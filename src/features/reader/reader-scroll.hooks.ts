@@ -15,11 +15,17 @@ const SAVE_DELAY_MS = 150;
 /**
  * The reader owns its scroll (the router's restoration is off for this
  * route): back/forward and reloads return to the saved verse, a `#v12` link
- * goes to that verse, and anything else starts at the top.
+ * goes to that verse, and anything else starts at the top. Toggling focus
+ * mode swaps the verse DOM, so it restores the same verse in the new view.
  */
-export function useScrollPosition(main: React.RefObject<HTMLElement | null>, surahData: SurahData | undefined) {
+export function useScrollPosition(
+  main: React.RefObject<HTMLElement | null>,
+  surahData: SurahData | undefined,
+  focusMode: boolean,
+) {
   const { key, hash } = useLocation({ select: (l) => ({ key: l.state.__TSR_key ?? l.href, hash: l.hash }) });
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-run when the verse DOM swaps for focus mode
   useEffect(() => {
     const root = main.current;
     if (!root || !surahData) return;
@@ -49,7 +55,7 @@ export function useScrollPosition(main: React.RefObject<HTMLElement | null>, sur
       clearTimeout(timer);
       window.removeEventListener('scroll', save);
     };
-  }, [main, surahData, key, hash]);
+  }, [main, surahData, key, hash, focusMode]);
 }
 
 /**

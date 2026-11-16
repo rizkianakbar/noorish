@@ -72,8 +72,17 @@ const VERSE_ID = /^v\d+$/;
  */
 export function topVerse(root: HTMLElement): VersePosition | null {
   if (window.scrollY === 0) return null;
+  // Mushaf pages above the screen are skipped whole: measuring a verse inside
+  // one would force layout of a page `content-visibility` is skipping.
+  let passedSheet: Element | null = null;
   for (const el of root.querySelectorAll<HTMLElement>('[id^="v"]')) {
     if (!VERSE_ID.test(el.id)) continue;
+    const sheet = el.closest('.mushaf-sheet');
+    if (sheet && sheet === passedSheet) continue;
+    if (sheet && sheet.getBoundingClientRect().bottom <= 0) {
+      passedSheet = sheet;
+      continue;
+    }
     const rect = el.getBoundingClientRect();
     if (rect.bottom > 0) return { id: el.id, top: rect.top };
   }
