@@ -1,12 +1,10 @@
 import { requestPlanSync, usePlan } from '#/features/plans/plans.hooks.ts';
 import { addDays, PLAN_LENGTHS } from '#/features/plans/plans.lib.ts';
 import { startPlan } from '#/features/plans/plans.store.ts';
-import { PlanContinue, PlanPortion } from '#/features/plans/plans-portion.tsx';
 import { useT } from '#/lib/i18n.ts';
 import { usePrefs } from '#/lib/prefs.ts';
 
-// Sits inside the frontispiece's dark field, beside "Continue reading".
-const panel = 'relative min-w-0 flex-1 basis-80 rounded-2xl bg-lapis/70 p-5 ring-1 ring-gold/25 sm:p-6';
+const panel = 'mt-6 rounded-2xl px-5 py-5 ring-1 ring-gold/30 sm:px-6';
 
 /**
  * Without a plan, a one-tap start: each pace with the pages a day it takes,
@@ -44,33 +42,13 @@ function PlanInvite(props: PlanInviteProps) {
 }
 
 /**
- * Today's reading from the reader's plan, or an invitation to start one.
- * A panel in the frontispiece, hidden from Settings if unwanted.
+ * Below the frontispiece, only while there is no plan: an invitation to
+ * start one (a running plan's portion is the frontispiece's "today").
+ * Hidden from Settings if unwanted.
  */
-export function HomePlan() {
-  const t = useT();
+export function HomePlanInvite() {
   const { planOnHome } = usePrefs();
-  const { plan, summary, today } = usePlan();
-  if (!planOnHome || plan?.completedAt) return null;
-  if (!plan) return <PlanInvite today={today} />;
-  if (!summary?.portion) return null;
-
-  return (
-    <section aria-labelledby="todays-reading" className={`${panel} flex flex-col gap-4`}>
-      <div className="min-w-0 grow">
-        <div className="flex items-baseline justify-between gap-3">
-          <h2 id="todays-reading" className="text-xs font-medium tracking-[0.18em] text-gold-ink uppercase">
-            {t.todaysReading}
-          </h2>
-          <span className="text-xs text-muted-foreground tabular-nums">
-            {t.planDayOf(Math.min(summary.day, summary.totalDays), summary.totalDays)}
-          </span>
-        </div>
-        <div className="mt-2">
-          <PlanPortion summary={summary} />
-        </div>
-      </div>
-      <PlanContinue summary={summary} className="self-start" />
-    </section>
-  );
+  const { plan, today } = usePlan();
+  if (!planOnHome || plan) return null;
+  return <PlanInvite today={today} />;
 }

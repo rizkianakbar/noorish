@@ -8,6 +8,7 @@ import { useProgress } from '#/lib/progress.ts';
 import { useChapters } from '#/lib/quran/data.ts';
 import { HomeFrontispiece } from './home-frontispiece.tsx';
 import { HomeIndexRow } from './home-index-row.tsx';
+import { HomePlanInvite } from './home-plan.tsx';
 import { HomeNow, HomePractice } from './home-tools.tsx';
 import { HomeVerseOfDay } from './home-verse-of-day.tsx';
 
@@ -34,6 +35,7 @@ export function HomePage() {
     <main id="main-content" className="min-w-0 grow">
       <div className="mx-auto max-w-5xl px-4 pt-6 pb-40 sm:px-8 sm:pt-10">
         <HomeFrontispiece />
+        <HomePlanInvite />
         <HomeNow />
         <HomeVerseOfDay />
         <HomePractice />

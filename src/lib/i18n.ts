@@ -17,6 +17,7 @@ const en = {
   makkah: 'Meccan',
   madinah: 'Medinan',
   continueReading: 'Continue reading',
+  orResume: (place: string) => `Or resume ${place}`,
   verseShort: (n: number) => `Ayah ${n}`,
   homeTagline: 'Read slowly. Reflect deeply.',
   homeIntro:
@@ -449,6 +450,7 @@ const id: Messages = {
   makkah: 'Makkiyah',
   madinah: 'Madaniyah',
   continueReading: 'Lanjutkan membaca',
+  orResume: (place: string) => `Atau lanjutkan ${place}`,
   verseShort: (n) => `Ayat ${n}`,
   homeTagline: 'Baca perlahan. Renungkan dalam-dalam.',
   homeIntro:
