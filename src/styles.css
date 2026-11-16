@@ -476,8 +476,14 @@
     linear-gradient(#000 0 0);
 }
 
+/*
+ * Justified to both margins like a printed mushaf; a page's short last
+ * line is centred, as at the end of a surah, instead of stretched.
+ */
 .mushaf-text {
   font-size: var(--arabic-size);
   line-height: 2.3;
+  text-align: justify;
+  text-align-last: center;
   text-wrap: pretty;
 }
