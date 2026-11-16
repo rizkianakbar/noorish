@@ -40,7 +40,10 @@ export function HomeIndexRow({ chapter, read }: { chapter: Chapter; read: number
           </span>
           <span className="block truncate text-xs text-muted-foreground">
             {chapterTranslatedName(chapter, language)}
-            <span className="ml-2">{t.verses(chapter.versesCount)}</span>
+            <span className="ml-2">
+              {read > 0 && pct < 1 ? t.versesRead(read, chapter.versesCount) : t.verses(chapter.versesCount)}
+            </span>
+            <span className="ml-2">{t[chapter.revelationPlace]}</span>
           </span>
         </span>
         {read > 0 && pct < 1 && (

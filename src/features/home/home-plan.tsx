@@ -5,7 +5,8 @@ import { PlanContinue, PlanPortion } from '#/features/plans/plans-portion.tsx';
 import { useT } from '#/lib/i18n.ts';
 import { usePrefs } from '#/lib/prefs.ts';
 
-const panel = 'mx-auto mt-10 max-w-3xl rounded-xl border border-gold/30 px-5 py-4';
+// Sits inside the frontispiece's dark field, beside "Continue reading".
+const panel = 'relative min-w-0 flex-1 basis-80 rounded-2xl bg-lapis/70 p-5 ring-1 ring-gold/25 sm:p-6';
 
 /**
  * Without a plan, a one-tap start: each pace with the pages a day it takes,
@@ -44,7 +45,7 @@ function PlanInvite(props: PlanInviteProps) {
 
 /**
  * Today's reading from the reader's plan, or an invitation to start one.
- * Quieter than the frontispiece: a hairline panel, hidden from Settings if unwanted.
+ * A panel in the frontispiece, hidden from Settings if unwanted.
  */
 export function HomePlan() {
   const t = useT();
@@ -55,9 +56,7 @@ export function HomePlan() {
   if (!summary?.portion) return null;
 
   return (
-    <section
-      aria-labelledby="todays-reading"
-      className={`${panel} flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-8`}>
+    <section aria-labelledby="todays-reading" className={`${panel} flex flex-col gap-4`}>
       <div className="min-w-0 grow">
         <div className="flex items-baseline justify-between gap-3">
           <h2 id="todays-reading" className="text-xs font-medium tracking-[0.18em] text-gold-ink uppercase">
@@ -71,7 +70,7 @@ export function HomePlan() {
           <PlanPortion summary={summary} />
         </div>
       </div>
-      <PlanContinue summary={summary} className="sm:self-center" />
+      <PlanContinue summary={summary} className="self-start" />
     </section>
   );
 }
