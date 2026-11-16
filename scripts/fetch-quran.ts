@@ -35,6 +35,13 @@ interface Resource {
   language_name: string;
 }
 
+/**
+ * A real word, not a verse-end number. The API tags those 'end', but marks
+ * at least one (2:181) as a 'word', which then showed beside the verse star.
+ */
+const isWord = (w: { char_type_name: string; text_uthmani: string }) =>
+  w.char_type_name === 'word' && !/^[\u0660-\u0669]+$/.test(w.text_uthmani);
+
 async function getJson<T>(url: string, attempt = 1): Promise<T> {
   const res = await fetch(url);
   if (res.ok) return res.json() as Promise<T>;
@@ -155,15 +162,13 @@ async function fetchSurah(surah: number, resources: SurahResources): Promise<Sou
   }
 
   const verses: SourceSurah['verses'] = enVerses.map((v, i) => {
-    const idWords = idVerses[i].words.filter((w) => w.char_type_name === 'word');
-    const words = v.words
-      .filter((w) => w.char_type_name === 'word')
-      .map((w, j) => ({
-        a: w.text_uthmani,
-        en: w.translation.text.trim(),
-        id: idWords[j]?.translation.text.trim() ?? '',
-        t: w.transliteration.text?.trim() ?? '',
-      }));
+    const idWords = idVerses[i].words.filter(isWord);
+    const words = v.words.filter(isWord).map((w, j) => ({
+      a: w.text_uthmani,
+      en: w.translation.text.trim(),
+      id: idWords[j]?.translation.text.trim() ?? '',
+      t: w.transliteration.text?.trim() ?? '',
+    }));
     const translationText = (resourceId: number) =>
       stripFootnotes(v.translations.find((t) => t.resource_id === resourceId)?.text ?? '');
 

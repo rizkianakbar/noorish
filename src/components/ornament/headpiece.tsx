@@ -160,7 +160,9 @@ export function VerseMarker({ n, className }: { n: string; className?: string })
         />
         <circle cx="20" cy="20" r="11" className="fill-none stroke-gold/60" strokeWidth={0.8} />
       </svg>
-      <span className="relative font-arabic text-[0.5em] leading-none font-semibold text-gold-ink">{n}</span>
+      {/* Reem Kufi (preloaded, weight 500 only): its digits sit centred in their line box, where the
+          Quran faces' tall ascents drop them well below the star's middle (Amiri Quran by over a third of an em). */}
+      <span className="relative font-kufi text-[0.5em] leading-none font-medium text-gold-ink">{n}</span>
     </span>
   );
 }

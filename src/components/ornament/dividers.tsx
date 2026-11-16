@@ -22,7 +22,7 @@ export function VerseDivider({ page }: { page?: number }) {
           title={t.mushafPage(page)}
           className="flex h-6 items-center gap-1.5 rounded-full px-2.5 text-[11px] text-gold-ink ring-1 ring-gold/40">
           <span className="sr-only">{t.mushafPage(page)}</span>
-          <span aria-hidden="true" className="font-arabic text-xs leading-none">
+          <span aria-hidden="true" className="font-kufi text-xs leading-none font-medium">
             {toArabicNumber(page)}
           </span>
           <span aria-hidden="true" className="h-3 w-px bg-gold/35" />

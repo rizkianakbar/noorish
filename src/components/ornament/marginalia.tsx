@@ -21,7 +21,9 @@ function KhamsMark({ n }: { n: number }) {
           strokeWidth={0.8}
         />
       </svg>
-      <span className="relative mt-3 font-arabic text-xs leading-none text-gold-ink">{toArabicNumber(n)}</span>
+      <span className="relative mt-3 font-kufi text-xs leading-none font-medium text-gold-ink">
+        {toArabicNumber(n)}
+      </span>
     </span>
   );
 }
@@ -40,7 +42,7 @@ function AshrMark({ n }: { n: number }) {
         />
         <circle cx="22" cy="22" r="13" className="fill-none stroke-gold/45" strokeWidth={0.8} />
       </svg>
-      <span className="relative font-arabic text-sm leading-none text-gold-ink">{toArabicNumber(n)}</span>
+      <span className="relative font-kufi text-sm leading-none font-medium text-gold-ink">{toArabicNumber(n)}</span>
     </span>
   );
 }

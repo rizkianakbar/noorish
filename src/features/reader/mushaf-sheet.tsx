@@ -122,7 +122,7 @@ export const MushafSheet = memo(function MushafSheet({
               strokeWidth={0.9}
             />
           </svg>
-          <span className="relative font-arabic text-[11px] leading-none text-gold-ink">
+          <span className="relative font-kufi text-[11px] leading-none font-medium text-gold-ink">
             {toArabicNumber(page.page)}
           </span>
         </span>
