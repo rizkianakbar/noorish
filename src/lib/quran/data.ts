@@ -54,6 +54,14 @@ export function getSurah(surah: number): Promise<SurahData> {
 }
 
 /**
+ * Pull a surah into the browser's caches (service worker, HTTP) without
+ * parsing it or keeping it in memory: opening it later is a cache read.
+ */
+export function prefetchSurah(surah: number): Promise<unknown> {
+  return fetch(surahPath(surah)).then((res) => res.arrayBuffer());
+}
+
+/**
  * The already-loaded surah, if any — lets the reader skip the skeleton.
  */
 export function getLoadedSurah(surah: number): SurahData | undefined {
