@@ -150,6 +150,7 @@ export async function sendDuePush(db: Database, now = new Date(), send: SendPush
   );
 
   const gone = new Set<string>();
+  // shortcut: unbounded concurrency, send in batches (e.g. 200 at a time) past ~5k devices due per minute.
   const results = await Promise.allSettled(
     fresh.map(async (item) => {
       const sub = subscriptions.get(item.subscriptionId);
@@ -163,6 +164,12 @@ export async function sendDuePush(db: Database, now = new Date(), send: SendPush
     }),
   );
   if (gone.size) await db.delete(pushSubscriptions).where(inArray(pushSubscriptions.id, [...gone]));
+
+  // Put failed sends back so the next run retries them; past STALE_MS they are dropped.
+  const retry = fresh.filter((_, i) => results[i].status === 'rejected');
+  for (const r of results) if (r.status === 'rejected') console.error('Push send failed:', r.reason);
+  if (retry.length)
+    await db.insert(pushSchedule).values(retry.map((item) => ({ ...item, prayer: item.payload.prayer })));
 
   const count = (test: (r: (typeof results)[number]) => boolean) => results.filter(test).length;
   return {

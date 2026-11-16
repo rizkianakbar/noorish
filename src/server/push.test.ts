@@ -63,6 +63,19 @@ describe('push schedule', () => {
     expect(sent).toHaveLength(1);
   });
 
+  serverTest('retries a send that failed on the next run', async ({ db }) => {
+    const sub = subscription();
+    await savePushSchedule(db, sub, [item(0)], NOW);
+    const failing: SendPush = async () => {
+      throw new Error('503 from the push service');
+    };
+
+    expect((await sendDuePush(db, NOW, failing)).failed).toBe(1);
+    const { sent, send } = recorder();
+    expect((await sendDuePush(db, new Date(NOW.getTime() + 60_000), send)).sent).toBe(1);
+    expect(sent).toEqual([`${sub.endpoint} 2001-01-01:asr Asr`]);
+  });
+
   serverTest('forgets a subscription the push service no longer knows', async ({ db }) => {
     const sub = subscription();
     await savePushSchedule(db, sub, [item(0), item(30)], NOW);
