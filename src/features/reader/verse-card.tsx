@@ -1,16 +1,26 @@
-import { type KeyboardEvent, memo, useState } from 'react';
+import { type KeyboardEvent, memo, Suspense, useState } from 'react';
 import { MarginMarker, SajdahNote } from '#/components/ornament/marginalia.tsx';
 import { toggleVerse } from '#/features/audio/audio.lib.ts';
-import { NoteEditor } from '#/features/notes/note-editor.tsx';
-import { TafsirPanel } from '#/features/tafsir/tafsir-panel.tsx';
+import { lazyOnIdle } from '#/lib/idle.ts';
 import type { Language } from '#/lib/prefs.ts';
 import { isSajdah } from '#/lib/quran/sajdah.ts';
 import type { Verse } from '#/lib/quran/types.ts';
 import { useCopyVerseLink, useLazyDrawer } from './verse-card.hooks.ts';
 import { VerseActions } from './verse-card-actions.tsx';
 import { VerseArabic } from './verse-card-arabic.tsx';
-import { VerseMoreSheet } from './verse-card-more-sheet.tsx';
 import { RecitingOrnament } from './verse-card-ornament.tsx';
+
+// Opened from a verse, not shown with it: off the surah's first load (the note
+// form alone brings zod and react-hook-form), fetched once the page is idle.
+const NoteEditor = lazyOnIdle(() =>
+  import('#/features/notes/note-editor.tsx').then((m) => ({ default: m.NoteEditor })),
+);
+const TafsirPanel = lazyOnIdle(() =>
+  import('#/features/tafsir/tafsir-panel.tsx').then((m) => ({ default: m.TafsirPanel })),
+);
+const VerseMoreSheet = lazyOnIdle(() =>
+  import('./verse-card-more-sheet.tsx').then((m) => ({ default: m.VerseMoreSheet })),
+);
 
 export interface VerseCardProps {
   surah: number;
@@ -138,22 +148,24 @@ export const VerseCard = memo(function VerseCard({
           <div aria-hidden="true" className="mt-3 h-6" />
         )}
 
-        {more.mounted && (
-          <VerseMoreSheet
-            open={more.open}
-            onOpenChange={more.setOpen}
-            verseKey={verse.key}
-            signedIn={signedIn}
-            copied={copied}
-            onCopyLink={copyLink}
-            onNote={() => setEditing(true)}
-          />
-        )}
+        <Suspense fallback={null}>
+          {more.mounted && (
+            <VerseMoreSheet
+              open={more.open}
+              onOpenChange={more.setOpen}
+              verseKey={verse.key}
+              signedIn={signedIn}
+              copied={copied}
+              onCopyLink={copyLink}
+              onNote={() => setEditing(true)}
+            />
+          )}
 
-        {editing && (
-          <NoteEditor surah={surah} verse={verse.n} initialBody={note ?? ''} onDone={() => setEditing(false)} />
-        )}
-        {tafsirOpen && <TafsirPanel surah={surah} verse={verse.n} />}
+          {editing && (
+            <NoteEditor surah={surah} verse={verse.n} initialBody={note ?? ''} onDone={() => setEditing(false)} />
+          )}
+          {tafsirOpen && <TafsirPanel surah={surah} verse={verse.n} />}
+        </Suspense>
       </article>
     </div>
   );

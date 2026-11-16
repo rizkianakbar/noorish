@@ -1,11 +1,11 @@
 import { lazy, type ReactNode, Suspense, useEffect } from 'react';
 import { Dock } from '#/features/dock/dock.tsx';
-import { DockSheet } from '#/features/dock/dock-sheet.tsx';
 import { usePlanSync } from '#/features/plans/plans.hooks.ts';
 import { prayerStore } from '#/features/prayer/prayer.store.ts';
 import { hideSplash } from '#/features/pwa/pwa.lib.ts';
 import { PwaUpdatePrompt } from '#/features/pwa/pwa-update-prompt.tsx';
 import { useT } from '#/lib/i18n.ts';
+import { lazyOnIdle } from '#/lib/idle.ts';
 import {
   useApplyPrefs,
   useGlobalShortcuts,
@@ -13,6 +13,9 @@ import {
   usePrefetchAllSurahs,
   useServiceWorker,
 } from './app-shell.hooks.ts';
+
+// Split out: the sheets (Base UI's drawer and the panels) open only on a tap.
+const DockSheet = lazyOnIdle(() => import('#/features/dock/dock-sheet.tsx').then((m) => ({ default: m.DockSheet })));
 
 // Split out: it brings the prayer-times library, which only readers with a place need.
 const PrayerReminder = lazy(() =>
@@ -46,7 +49,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         {t.skipToContent}
       </a>
       <div className="relative flex min-w-0 grow">{children}</div>
-      <DockSheet />
+      <Suspense fallback={null}>
+        <DockSheet />
+      </Suspense>
       <PwaUpdatePrompt />
       {prayer.place && prayer.reminders && (
         <Suspense fallback={null}>
