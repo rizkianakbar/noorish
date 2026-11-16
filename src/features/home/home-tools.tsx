@@ -45,7 +45,7 @@ export function HomeNow() {
   const { place, day, now } = usePrayerDay();
   const bearing = place ? qiblaBearing(place) : null;
   const duaCategories = useQuery(duaQueries.index()).data?.categories;
-  // Names the dhikr for this time of day, which is what the duas page opens on.
+  // Names the dhikr for this time of day, which the duas page leads with.
   const dhikr = duaCategories?.find((c) => c.slug === categoryForHour(now.getHours()))?.name[language] ?? t.duas;
 
   return (

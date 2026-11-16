@@ -415,10 +415,12 @@ html[data-focus]:not([data-hydrated]) [data-prerendered] {
  */
 @layer base {
   @media (pointer: coarse) {
-    [data-slot='button'] {
+    [data-slot='button'],
+    [data-slot='toggle'] {
       position: relative;
     }
-    [data-slot='button']::after {
+    [data-slot='button']::after,
+    [data-slot='toggle']::after {
       content: '';
       position: absolute;
       inset: min(0px, calc((100% - 44px) / 2));

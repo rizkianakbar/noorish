@@ -1,4 +1,5 @@
 import { matchesAll, normalizeArabic, type ParsedQuery } from '#/features/search/search.lib.ts';
+import type { Language } from '#/lib/prefs.ts';
 import type { Dua } from './duas.types.ts';
 
 /**
@@ -89,4 +90,57 @@ export const DUA_URL_SLUGS: Record<string, string> = {
  */
 export function categoryFromUrl(urlSlug: string): string | undefined {
   return Object.keys(DUA_URL_SLUGS).find((slug) => DUA_URL_SLUGS[slug] === urlSlug);
+}
+
+/**
+ * A title without the "Supplication"/"Doa" every entry in a list starts
+ * with, so "Doa Sebelum Makan" reads "Sebelum Makan" under its category.
+ */
+export function shortTitle(title: string): string {
+  const short = title.replace(/^(?:supplication|prayer|dua|doa)\s+/i, '');
+  return short.charAt(0).toUpperCase() + short.slice(1);
+}
+
+/**
+ * Text split around its "(1)" verse numbers, so they can be drawn as markers
+ * rather than bracketed digits (which also flip about in Arabic).
+ */
+export function splitVerseNumbers(text: string): (string | number)[] {
+  return text
+    .split(/\s*\((\d+)\)/)
+    .map((part, i) => (i % 2 ? Number(part) : part))
+    .filter((part) => part !== '');
+}
+
+/**
+ * The daily duas by occasion, so 38 of them can be scanned. Keys are dua ids
+ * (`bun duas:fetch` keeps them stable); a dua not listed falls under `other`.
+ */
+export const DAILY_GROUPS: { key: string; ids: number[] }[] = [
+  { key: 'sleep', ids: [1, 2] },
+  { key: 'purity', ids: [3, 4, 10, 11] },
+  { key: 'food', ids: [5, 6, 7, 12] },
+  { key: 'mosque', ids: [8, 9, 37] },
+  { key: 'home', ids: [13, 14, 15, 16] },
+  { key: 'travel', ids: [17, 18, 19, 22] },
+  { key: 'clothes', ids: [20, 21] },
+  { key: 'weather', ids: [23, 24, 25, 26] },
+  { key: 'hardship', ids: [27, 28, 29, 30, 31, 38] },
+  { key: 'sneezing', ids: [32, 33, 34] },
+  { key: 'character', ids: [35, 36] },
+];
+
+export function groupDailyDuas<T extends { id: string }>(duas: T[]): { key: string; duas: T[] }[] {
+  const number = (dua: T) => Number(dua.id.split('-').pop());
+  const listed = new Set(DAILY_GROUPS.flatMap((g) => g.ids));
+  const groups = DAILY_GROUPS.map((g) => ({ key: g.key, duas: duas.filter((d) => g.ids.includes(number(d))) }));
+  groups.push({ key: 'other', duas: duas.filter((d) => !listed.has(number(d))) });
+  return groups.filter((g) => g.duas.length > 0);
+}
+
+/**
+ * Said in full today: its count reached (once, for a dua said once).
+ */
+export function isSaid(dua: Dua, said: Record<string, number>, language: Language): boolean {
+  return (said[dua.id] ?? 0) >= (repeatCount(dua.notes[language]) ?? 1);
 }
