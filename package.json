@@ -72,6 +72,7 @@
     "@vitejs/plugin-react": "^6.0.1",
     "drizzle-kit": "1.0.0-rc.5",
     "drizzle-seed": "1.0.0-rc.5",
+    "happy-dom": "^21.0.4",
     "nitro": "3.0.260610-beta",
     "shadcn": "^4.21.0",
     "tailwindcss": "^4.1.18",
