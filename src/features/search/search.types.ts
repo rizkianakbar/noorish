@@ -8,10 +8,11 @@ export interface SearchHit {
   viaLatin: boolean;
 }
 
-export type SearchRequest = { type: 'init' } | { type: 'query'; id: number; query: string; lang: 'en' | 'id' };
+export type SearchRequest =
+  | { type: 'init'; lang: 'en' | 'id' }
+  | { type: 'query'; id: number; query: string; lang: 'en' | 'id' };
 
 export type SearchResponse =
-  | { type: 'progress'; loaded: number }
   | { type: 'ready' }
   | { type: 'results'; id: number; hits: SearchHit[] }
   | { type: 'error'; message: string };

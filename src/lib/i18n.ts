@@ -70,7 +70,7 @@ const en = {
   pages: 'Mushaf pages',
   yourProgress: 'Your progress',
   searchPlaceholder: 'Search the Quran, duas, hadith…',
-  searchLoading: (pct: number) => `Preparing search index… ${pct}%`,
+  searchLoading: 'Preparing search…',
   searchMinChars: 'Type at least 3 characters.',
   searchResults: (n: number) => (n >= 200 ? '200+ results' : `${n} ${n === 1 ? 'result' : 'results'}`),
   searchHint: 'Quran in Arabic and your translation, plus duas and hadith. Try “doa makan” or “hadith fasting”.',
@@ -452,7 +452,7 @@ const id: Messages = {
   pages: 'Halaman mushaf',
   yourProgress: 'Progres Anda',
   searchPlaceholder: 'Cari Al-Qur’an, doa, hadis…',
-  searchLoading: (pct) => `Menyiapkan indeks pencarian… ${pct}%`,
+  searchLoading: 'Menyiapkan pencarian…',
   searchMinChars: 'Ketik minimal 3 karakter.',
   searchResults: (n) => (n >= 200 ? '200+ hasil' : `${n} hasil`),
   searchHint:

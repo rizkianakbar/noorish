@@ -39,7 +39,7 @@ export function SearchPanel() {
   const prefs = usePrefs();
   const lang = resolveTranslation(prefs) ?? prefs.language;
   const { data: chapters = [] } = useChapters();
-  const { loaded, ready } = searchIndexStore.use();
+  const { ready } = searchIndexStore.use();
   const [query, setQuery] = useState('');
   const deferred = useDeferredValue(query.trim());
   const inputRef = useRef<HTMLInputElement>(null);
@@ -52,7 +52,7 @@ export function SearchPanel() {
     });
   }, []);
 
-  useEffect(warmSearch, []);
+  useEffect(() => warmSearch(lang), [lang]);
 
   const search = useQuery(searchQueries.verses(deferred, lang));
   const found = deferred.length >= 3 ? search.data : undefined;
@@ -75,7 +75,7 @@ export function SearchPanel() {
         />
         <p className="text-xs text-muted-foreground" aria-live="polite">
           {!ready
-            ? t.searchLoading(Math.round((loaded / 114) * 100))
+            ? t.searchLoading
             : deferred.length > 0 && deferred.length < 3
               ? t.searchMinChars
               : deferred.length >= 3

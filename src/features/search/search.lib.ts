@@ -1,17 +1,26 @@
+import type { Verse } from '#/lib/quran/types.ts';
+import type { SearchHit } from './search.types.ts';
+
 /**
- * Text folding shared by the search worker and the results view.
+ * Text folding shared by the search worker, the results view and the index
+ * build (`bun search:index`).
  */
 
 /**
  * Strip harakat and Quranic annotation marks so a plain-typed Arabic query
  * matches the fully vocalized Uthmani text; alef variants fold to bare alef.
- * Tatweel (the stretching stroke in الرحمـن) goes too.
+ * Tatweel (the stretching stroke in الرحمـن) goes too, and ى/ة fold to ي/ه.
  */
 export function normalizeArabic(text: string): string {
-  return text
-    .replace(/[ؐ-ًؚ-ٰٟۖ-ۭ]/g, '')
-    .replace(/\u0640/g, '')
-    .replace(/[آأإٱ]/g, 'ا');
+  return (
+    text
+      .replace(/[ؐ-ًؚ-ٰٟۖ-ۭ]/g, '')
+      .replace(/\u0640/g, '')
+      .replace(/[آأإٱ]/g, 'ا')
+      // Uthmani spelling writes final ي as ى (الحى) and readers type either; same for ة/ه.
+      .replace(/ى/g, 'ي')
+      .replace(/ة/g, 'ه')
+  );
 }
 
 export function normalizeLatin(text: string): string {
@@ -27,6 +36,52 @@ export function compactLatin(text: string): string {
 }
 
 export const ARABIC_SCRIPT = /[؀-ۿ]/;
+
+export type SearchLang = 'en' | 'id';
+
+/**
+ * One verse of the prebuilt search index, as a tuple to keep the file small:
+ * surah, verse, translation, transliteration (shown when only it matched),
+ * then the folded Arabic, translation and transliteration that are searched.
+ */
+export type IndexedVerse = [number, number, string, string, string, string, string];
+
+export const searchIndexPath = (lang: SearchLang) => `/quran/search-${lang}.json`;
+
+export function toIndexedVerse(surah: number, verse: Verse, lang: SearchLang): IndexedVerse {
+  return [
+    surah,
+    verse.n,
+    verse[lang],
+    verse.latinId,
+    normalizeArabic(verse.arabic),
+    normalizeLatin(verse[lang]),
+    // Both styles, so either spelling finds the verse.
+    compactLatin(`${verse.latinId} ${verse.latinEn}`),
+  ];
+}
+
+const MAX_RESULTS = 200;
+
+/**
+ * Verses whose Arabic (for an Arabic query) or translation contains the
+ * query, falling back to the transliteration for Latin queries.
+ */
+export function searchIndex(verses: IndexedVerse[], query: string): SearchHit[] {
+  const isArabic = ARABIC_SCRIPT.test(query);
+  const needle = isArabic ? normalizeArabic(query) : normalizeLatin(query);
+  const latinNeedle = compactLatin(query);
+  const hits: SearchHit[] = [];
+  for (const [surah, verse, text, latin, arabic, translation, transliteration] of verses) {
+    if (isArabic ? arabic.includes(needle) : translation.includes(needle)) {
+      hits.push({ surah, verse, text, viaLatin: false });
+    } else if (!isArabic && latinNeedle.length >= 3 && transliteration.includes(latinNeedle)) {
+      hits.push({ surah, verse, text: latin, viaLatin: true });
+    }
+    if (hits.length >= MAX_RESULTS) break;
+  }
+  return hits;
+}
 
 /**
  * Words that say what kind of result is wanted rather than what about:

@@ -25,7 +25,7 @@ function getJson<T>(path: string): Promise<T> {
   return hit as Promise<T>;
 }
 
-const surahPath = (surah: number) => `/quran/${surah}.json`;
+export const surahPath = (surah: number) => `/quran/${surah}.json`;
 
 /**
  * The chapter list is small and needed on every page (and by the server for

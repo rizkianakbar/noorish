@@ -7,7 +7,15 @@ import duaIndexJson from '#/features/duas/duas-index.json' with { type: 'json' }
 import { searchHadith } from '#/features/hadith/hadith.lib.ts';
 import type { HadithIndex } from '#/features/hadith/hadith.types.ts';
 import hadithIndexJson from '#/features/hadith/hadith-index.json' with { type: 'json' };
-import { matchesAll, parseQuery } from './search.lib.ts';
+import type { SurahData } from '#/lib/quran/types.ts';
+import {
+  type IndexedVerse,
+  matchesAll,
+  parseQuery,
+  searchIndex,
+  searchIndexPath,
+  toIndexedVerse,
+} from './search.lib.ts';
 
 // The real collections from `public/` (`bun duas:fetch`, `bun hadith:fetch`), so these
 // tests prove the searches people actually type.
@@ -52,5 +60,25 @@ describe('searching hadith', () => {
     expect(books('hadis makan').some((name) => /food|eat|meal/i.test(name))).toBe(true);
     expect(books('hadith fasting').some((name) => /fast/i.test(name))).toBe(true);
     expect(books('hadis puasa').some((name) => /fast/i.test(name))).toBe(true);
+  });
+});
+
+describe('the verse search index', () => {
+  const index = read<IndexedVerse[]>(searchIndexPath('en'));
+
+  it('is in step with the surah files and the folding (else run `bun search:index`)', () => {
+    expect(index).toHaveLength(6236);
+    for (const n of [1, 2, 114]) {
+      const surah = read<SurahData>(`quran/${n}.json`);
+      expect(index.filter(([s]) => s === n)).toEqual(surah.verses.map((v) => toIndexedVerse(n, v, 'en')));
+    }
+  });
+
+  it('finds verses by translation, by Arabic without vowels, and by transliteration', () => {
+    const keys = (q: string) => searchIndex(index, q).map((h) => `${h.surah}:${h.verse}`);
+    expect(keys('Neither drowsiness overtakes Him')).toContain('2:255');
+    expect(keys('الله لا اله الا هو الحي القيوم')).toContain('2:255');
+    const latin = searchIndex(index, 'bismillahirrahmanirrahim');
+    expect(latin.some((h) => h.surah === 1 && h.verse === 1 && h.viaLatin)).toBe(true);
   });
 });

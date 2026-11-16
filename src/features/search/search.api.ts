@@ -3,11 +3,9 @@ import { createStore } from '#/lib/store.ts';
 import type { SearchHit, SearchRequest, SearchResponse } from './search.types.ts';
 
 /**
- * How far the worker's index is: surah files loaded (of 114), and whether it
- * can answer queries yet.
+ * Whether the worker's index can answer queries yet.
  */
-export const searchIndexStore = createStore<{ loaded: number; ready: boolean; error: string | null }>({
-  loaded: 0,
+export const searchIndexStore = createStore<{ ready: boolean; error: string | null }>({
   ready: false,
   error: null,
 });
@@ -21,8 +19,7 @@ function getWorker(): Worker {
   worker = new Worker(new URL('./search.worker.ts', import.meta.url), { type: 'module' });
   worker.onmessage = (event: MessageEvent<SearchResponse>) => {
     const message = event.data;
-    if (message.type === 'progress') searchIndexStore.set((s) => ({ ...s, loaded: message.loaded }));
-    else if (message.type === 'ready') searchIndexStore.set((s) => ({ ...s, ready: true, error: null }));
+    if (message.type === 'ready') searchIndexStore.set((s) => ({ ...s, ready: true, error: null }));
     else if (message.type === 'error') searchIndexStore.set((s) => ({ ...s, error: message.message }));
     else {
       searchIndexStore.set((s) => (s.ready ? s : { ...s, ready: true }));
@@ -34,11 +31,11 @@ function getWorker(): Worker {
 }
 
 /**
- * Start building the index in the background. Safe to call repeatedly.
+ * Start loading the index for `lang` in the background. Safe to call repeatedly.
  */
-export function warmSearch() {
+export function warmSearch(lang: 'en' | 'id') {
   if (typeof Worker === 'undefined') return;
-  if (!worker) getWorker().postMessage({ type: 'init' } satisfies SearchRequest);
+  getWorker().postMessage({ type: 'init', lang } satisfies SearchRequest);
 }
 
 export function searchVerses(query: string, lang: 'en' | 'id'): Promise<SearchHit[]> {

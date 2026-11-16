@@ -6,6 +6,7 @@ import type { HadithBook, HadithCollection, HadithIndex } from '#/features/hadit
 import hadithIndexJson from '#/features/hadith/hadith-index.json' with { type: 'json' };
 import { messagesFor } from './i18n.ts';
 import chapters from './quran/chapters.json' with { type: 'json' };
+import { surahPath } from './quran/data.ts';
 import type { Chapter } from './quran/types.ts';
 
 /**
@@ -146,7 +147,12 @@ function surahHead(chapter: Chapter): Head {
   const { url, meta, links } = page({ title, description, socialDescription, path: `/surah/${chapter.number}` });
   return {
     meta,
-    links,
+    links: [
+      ...links,
+      // Fetch the verses alongside the JS instead of after it runs; `crossOrigin`
+      // matches `fetch()`'s default, so `getSurah` reuses this response.
+      { rel: 'preload', as: 'fetch', href: surahPath(chapter.number), crossOrigin: 'anonymous' },
+    ],
     scripts: [
       jsonLd({
         '@graph': [
