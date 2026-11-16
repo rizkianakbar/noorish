@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { starOutline } from '#/components/ornament/geometry.ts';
 import { VerseMarker } from '#/components/ornament/headpiece.tsx';
 import { Lattice } from '#/components/ornament/lattice.tsx';
@@ -82,7 +83,7 @@ function VerseText({ verse, recitation }: { verse: Verse; recitation: Recitation
  * with the surah and juz' in the top margin and the page number at the foot.
  * Its text runs at the reader's own Arabic size; the sheet grows to fit.
  */
-export function MushafSheet({
+export const MushafSheet = memo(function MushafSheet({
   page,
   chapter,
   recitation,
@@ -128,4 +129,4 @@ export function MushafSheet({
       </div>
     </section>
   );
-}
+});
