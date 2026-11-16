@@ -408,6 +408,24 @@ html[data-focus]:not([data-hydrated]) [data-prerendered] {
   }
 }
 
+/*
+ * Touch screens: grow every Button's hit area to at least 44×44px without
+ * changing its look. Insets are % of the button's own size, so only the
+ * axes under 44px grow. In base so `absolute`/`fixed` utilities still win.
+ */
+@layer base {
+  @media (pointer: coarse) {
+    [data-slot='button'] {
+      position: relative;
+    }
+    [data-slot='button']::after {
+      content: '';
+      position: absolute;
+      inset: min(0px, calc((100% - 44px) / 2));
+    }
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
