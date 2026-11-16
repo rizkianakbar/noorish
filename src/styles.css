@@ -19,6 +19,8 @@
   }
   html {
     @apply font-sans;
+    /* No grey flash on tap; controls have their own pressed states. */
+    -webkit-tap-highlight-color: transparent;
   }
   /* Selected text is gilded: gold ground, lapis ink, in every theme. */
   ::selection {
@@ -442,6 +444,9 @@
  */
 .mushaf-sheet {
   position: relative;
+  /* Off-screen pages skip layout and paint, like verse cards. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 60rem;
   padding: 3.5rem 1.75rem 3.75rem;
   border-radius: 6px;
   color: var(--foreground);
