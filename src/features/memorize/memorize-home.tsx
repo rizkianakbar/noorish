@@ -17,6 +17,8 @@ import { passageSchema } from './memorize.schemas.ts';
 import { memorizeStore, removePassage, setMemorizeSetting, stopLearning } from './memorize.store.ts';
 import type { PracticeRange, Practise } from './memorize.types.ts';
 
+const QUICK_PICKS = [1, 114, 113, 112, 108, 103, 110, 109];
+
 type DeletableRowProps = {
   label: string;
   question: string;
@@ -198,6 +200,10 @@ export function MemorizeHome(props: MemorizeHomeProps) {
   );
   const suggestion = learning?.range ??
     (latest && nextPassage(latest, (n) => chapters[n - 1]?.versesCount)) ?? { surah: 112, from: 1, to: 4 };
+  // Whole short surahs most people learn first, minus any already started.
+  const quickPicks = QUICK_PICKS.map((n) => chapters[n - 1]).filter(
+    (c) => c && c.number !== suggestion.surah && !passages.some((p) => p.surah === c.number),
+  );
 
   return (
     <div className="space-y-9">
@@ -256,8 +262,43 @@ export function MemorizeHome(props: MemorizeHomeProps) {
       )}
 
       <section>
-        <SectionTitle>{t.memorizeNew}</SectionTitle>
-        <PassagePicker chapters={chapters} initial={suggestion} />
+        <SectionTitle>{learning ? t.memorizeNew : t.memorizeStartHere}</SectionTitle>
+        {!learning && (
+          <Link
+            to="/memorize"
+            search={suggestion}
+            className="pressable flex items-center gap-3 rounded-2xl border border-gold/40 bg-gold/8 px-5 py-4 hover:bg-gold/12">
+            <span className="grow font-serif text-lg">{name(suggestion)}</span>
+            <span className="flex items-center gap-1 text-sm font-medium text-gold-ink">
+              {t.memorizeStart}
+              <ArrowRight className="size-4" />
+            </span>
+          </Link>
+        )}
+        {quickPicks.length > 0 && (
+          <>
+            <p className="mt-5 mb-2 text-xs text-muted-foreground">{t.memorizeQuickPicks}</p>
+            <div className="flex flex-wrap gap-2">
+              {quickPicks.map((c) => (
+                <Link
+                  key={c.number}
+                  to="/memorize"
+                  search={{ surah: c.number, from: 1, to: c.versesCount }}
+                  className="pressable rounded-full border bg-card px-3.5 py-1.5 text-sm hover:border-gold/50">
+                  {c.nameSimple}
+                </Link>
+              ))}
+            </div>
+          </>
+        )}
+        <details className="group mt-5">
+          <summary className="cursor-pointer list-none text-sm font-medium text-gold-ink hover:underline">
+            {t.memorizeChooseOther}
+          </summary>
+          <div className="mt-3">
+            <PassagePicker chapters={chapters} initial={suggestion} />
+          </div>
+        </details>
       </section>
 
       {passages.length > 0 && (

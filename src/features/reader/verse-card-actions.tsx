@@ -1,6 +1,7 @@
 import {
   Bookmark,
   BookOpenText,
+  Brain,
   Check,
   ChevronDown,
   Ellipsis,
@@ -33,6 +34,11 @@ function actionClass(active: boolean | undefined, className?: string) {
 function ActionButton({ active, className, ...props }: React.ComponentProps<'button'> & { active?: boolean }) {
   return <button type="button" className={actionClass(active, className)} {...props} />;
 }
+
+/**
+ * Memorize from this verse: up to five verses (the page clamps to the surah's end).
+ */
+export const memorizeHref = (surah: number, verse: number) => `/memorize?surah=${surah}&from=${verse}&to=${verse + 4}`;
 
 function SignInLink({ className, ...props }: Omit<React.ComponentProps<'a'>, 'href'>) {
   return <RouterAnchor href="/login" className={actionClass(false, className)} {...props} />;
@@ -141,6 +147,12 @@ export function VerseActions(props: VerseActionsProps) {
           {t.note}
         </SignInLink>
       )}
+      <RouterAnchor
+        href={memorizeHref(props.surah, props.verse)}
+        className={actionClass(false, 'hidden md:inline-flex')}>
+        <Brain />
+        {t.memorizeFromHere}
+      </RouterAnchor>
       <ActionButton
         className="md:hidden"
         title={t.moreActions}

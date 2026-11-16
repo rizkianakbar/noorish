@@ -384,6 +384,18 @@ const en = {
   later: 'Later',
   playWord: 'Play word',
   backToVerse: (n: number) => `Back to verse ${n}`,
+  planInviteTitle: 'Read the whole Quran',
+  planInviteNote: 'Pick a pace. Your reading counts towards it as you go.',
+  planPerDay: (n: number) => `${n} pages a day`,
+  memorizeStartHere: 'Start here',
+  memorizeQuickPicks: 'Short surahs to begin with',
+  memorizeChooseOther: 'Choose another passage',
+  memorizeFromHere: 'Memorize',
+  filterDuas: 'Find a dua (e.g. eating, travel)…',
+  noDuaMatch: 'No dua matches.',
+  hadithOfDay: 'Hadith of the day',
+  hadithStartHere: 'Short and foundational: start here',
+  hadithReadCollection: 'Read the collection',
 };
 
 export type Messages = typeof en;
@@ -768,6 +780,18 @@ const id: Messages = {
   later: 'Nanti',
   playWord: 'Putar kata',
   backToVerse: (n) => `Kembali ke ayat ${n}`,
+  planInviteTitle: 'Khatamkan Al-Qur’an',
+  planInviteNote: 'Pilih kecepatan. Bacaanmu terhitung otomatis.',
+  planPerDay: (n) => `${n} halaman sehari`,
+  memorizeStartHere: 'Mulai dari sini',
+  memorizeQuickPicks: 'Surah pendek untuk memulai',
+  memorizeChooseOther: 'Pilih bacaan lain',
+  memorizeFromHere: 'Hafalkan',
+  filterDuas: 'Cari doa (mis. makan, safar)…',
+  noDuaMatch: 'Tidak ada doa yang cocok.',
+  hadithOfDay: 'Hadis hari ini',
+  hadithStartHere: 'Singkat dan mendasar: mulai dari sini',
+  hadithReadCollection: 'Baca selengkapnya',
 };
 
 const messages: Record<Language, Messages> = { en, id };

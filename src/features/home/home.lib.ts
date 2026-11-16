@@ -48,10 +48,16 @@ export const DAILY_VERSES: readonly (readonly [surah: number, verse: number])[] 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
+ * Days since the epoch for the local calendar day: the same all day, for everyone.
+ */
+export function dayNumber(date: Date): number {
+  return Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / DAY_MS);
+}
+
+/**
  * The same verse all day (local time) for everyone, a different one tomorrow.
  */
 export function verseOfTheDay(date: Date): { surah: number; verse: number } {
-  const day = Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / DAY_MS);
-  const [surah, verse] = DAILY_VERSES[day % DAILY_VERSES.length];
+  const [surah, verse] = DAILY_VERSES[dayNumber(date) % DAILY_VERSES.length];
   return { surah, verse };
 }

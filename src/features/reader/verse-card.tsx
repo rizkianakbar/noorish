@@ -7,7 +7,7 @@ import { isSajdah } from '#/lib/quran/sajdah.ts';
 import { QURAN_LANGS } from '#/lib/quran/surah-files.ts';
 import type { Verse } from '#/lib/quran/types.ts';
 import { useCopyVerseLink, useLazyDrawer } from './verse-card.hooks.ts';
-import { VerseActions } from './verse-card-actions.tsx';
+import { memorizeHref, VerseActions } from './verse-card-actions.tsx';
 import { VerseArabic } from './verse-card-arabic.tsx';
 import { RecitingOrnament } from './verse-card-ornament.tsx';
 
@@ -177,6 +177,7 @@ export const VerseCard = memo(function VerseCard({
               open={more.open}
               onOpenChange={more.setOpen}
               verseKey={verse.key}
+              memorizeHref={memorizeHref(surah, verse.n)}
               signedIn={signedIn}
               copied={copied}
               onCopyLink={copyLink}

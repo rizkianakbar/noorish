@@ -7,6 +7,7 @@ import { PageShell } from '#/components/page-shell.tsx';
 import { buttonVariants } from '#/components/ui/button.tsx';
 import { Field, FieldLabel } from '#/components/ui/field.tsx';
 import { Input } from '#/components/ui/input.tsx';
+import { dayNumber } from '#/features/home/home.lib.ts';
 import { matchesAll, parseQuery } from '#/features/search/search.lib.ts';
 import { useT } from '#/lib/i18n.ts';
 import { resolveTranslation, usePrefs } from '#/lib/prefs.ts';
@@ -45,6 +46,36 @@ function useHadithLanguage(): 'en' | 'id' {
 }
 
 /**
+ * One of an-Nawawi's Forty each day: a short way in before the library.
+ */
+function HadithOfTheDay() {
+  const t = useT();
+  const name = useCollectionName();
+  const lang = useHadithLanguage();
+  const { data } = useQuery(hadithQueries.book('nawawi', 1, lang));
+  const hadiths = data?.hadiths ?? [];
+  if (!hadiths.length) return null;
+  const hadith = hadiths[dayNumber(new Date()) % hadiths.length];
+  const collection = name({ slug: 'nawawi', name: '' });
+
+  return (
+    <section aria-labelledby="hadith-of-day" className="mb-9">
+      <h2 id="hadith-of-day" className="mb-3 text-xs font-medium tracking-[0.16em] text-gold-ink uppercase">
+        {t.hadithOfDay}
+      </h2>
+      <HadithCard hadith={hadith} reference={`${collection} ${Math.floor(hadith.number)}`} />
+      <Link
+        to="/hadith/$collection/$book"
+        params={{ collection: 'nawawi', book: '1' }}
+        className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-gold-ink hover:underline">
+        {t.hadithReadCollection}
+        <ArrowRight className="size-3.5" />
+      </Link>
+    </section>
+  );
+}
+
+/**
  * The collections: the two forties first (where most people start), then
  * the six books and the Muwatta.
  */
@@ -58,6 +89,7 @@ export function HadithHome() {
   return (
     <Shell title={t.hadith}>
       {isError && <p className="text-sm text-destructive">{t.hadithLoadError}</p>}
+      <HadithOfTheDay />
       <div className="grid gap-3 sm:grid-cols-2">
         {featured.map((c) => (
           <Link
@@ -72,7 +104,9 @@ export function HadithHome() {
             <span className="relative mt-4 flex items-end justify-between gap-3">
               <span>
                 <span className="block font-serif text-lg leading-tight">{name(c)}</span>
-                <span className="mt-0.5 block text-xs text-muted-foreground">{t.hadithCount(c.count)}</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">
+                  {t.hadithCount(c.count)} · {t.hadithStartHere}
+                </span>
               </span>
               <ArrowRight className="mb-0.5 size-4 shrink-0 text-gold" />
             </span>

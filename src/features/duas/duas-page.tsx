@@ -1,14 +1,24 @@
 import { useQuery } from '@tanstack/react-query';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import { BookHeart, CalendarDays, Moon, Sparkles, Sunrise } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ChoiceGroup } from '#/components/choice-group.tsx';
 import { Lattice } from '#/components/ornament/lattice.tsx';
 import { PageShell } from '#/components/page-shell.tsx';
+import { Input } from '#/components/ui/input.tsx';
+import { parseQuery } from '#/features/search/search.lib.ts';
 import { useT } from '#/lib/i18n.ts';
 import { usePrefs } from '#/lib/prefs.ts';
+import { cn } from '#/lib/utils.ts';
 import { duaQueries } from './duas.api.ts';
-import { CATEGORY_ARABIC, categoryForHour, DUA_URL_SLUGS, repeatCount } from './duas.lib.ts';
+import {
+  CATEGORY_ARABIC,
+  categoryForHour,
+  DUA_URL_SLUGS,
+  ROUTINE_CATEGORIES,
+  repeatCount,
+  searchDuas,
+} from './duas.lib.ts';
 import { useSaidToday } from './duas.store.ts';
 import { DuaCard } from './duas-card.tsx';
 
@@ -43,6 +53,18 @@ export function DuasPage(props: DuasPageProps) {
     categories.find((c) => c.slug === categoryForHour(new Date().getHours()));
   const duas = useQuery({ ...duaQueries.category(current?.slug ?? ''), enabled: !!current });
   const doneCount = duas.data?.filter((d) => (said[d.id] ?? 0) >= (repeatCount(d.notes[language]) ?? 1)).length ?? 0;
+  const routine = !!current && ROUTINE_CATEGORIES.has(current.slug);
+  const [filter, setFilter] = useState('');
+  const query = parseQuery(filter);
+  const filtering = !routine && (query.terms.length > 0 || !!query.arabic);
+  const shown =
+    filtering && duas.data && current
+      ? searchDuas(
+          duas.data.map((dua) => ({ dua, category: current.slug })),
+          query,
+          duas.data.length,
+        ).map((hit) => hit.dua)
+      : duas.data;
 
   // Opened from search: bring that dua into view once its category has loaded.
   useEffect(() => {
@@ -57,9 +79,10 @@ export function DuasPage(props: DuasPageProps) {
           <ChoiceGroup
             label={t.duas}
             value={current.slug}
-            onChange={(slug) =>
-              void navigate({ to: '/duas/$category', params: { category: DUA_URL_SLUGS[slug] }, replace: true })
-            }
+            onChange={(slug) => {
+              setFilter('');
+              void navigate({ to: '/duas/$category', params: { category: DUA_URL_SLUGS[slug] }, replace: true });
+            }}
             options={categories.map((c) => ({
               value: c.slug,
               label: c.name[language],
@@ -85,7 +108,7 @@ export function DuasPage(props: DuasPageProps) {
               {CATEGORY_ARABIC[current.slug]}
             </p>
           </div>
-          {duas.data && (
+          {routine && duas.data && (
             <div className="relative mt-5">
               <span className="block h-1.5 overflow-hidden rounded-full bg-foreground/10">
                 <span
@@ -102,9 +125,29 @@ export function DuasPage(props: DuasPageProps) {
       )}
 
       {(index.isError || duas.isError) && <p className="mt-6 text-sm text-destructive">{t.duasLoadError}</p>}
-      <div key={`list-${current?.slug}`} className="mt-5 animate-in space-y-4 duration-300 fade-in">
-        {duas.data?.map((dua, i) => (
-          <DuaCard key={dua.id} dua={dua} number={i + 1} said={said[dua.id] ?? 0} />
+      {!routine && duas.data && (
+        <Input
+          type="search"
+          aria-label={t.filterDuas}
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          placeholder={t.filterDuas}
+          className="mt-5 h-10"
+        />
+      )}
+      {filtering && shown?.length === 0 && <p className="mt-5 text-sm text-muted-foreground">{t.noDuaMatch}</p>}
+      <div
+        key={`list-${current?.slug}`}
+        className={cn('mt-5 animate-in duration-300 fade-in', routine ? 'space-y-4' : 'space-y-2')}>
+        {shown?.map((dua) => (
+          <DuaCard
+            key={dua.id}
+            dua={dua}
+            number={(duas.data?.indexOf(dua) ?? 0) + 1}
+            said={said[dua.id] ?? 0}
+            routine={routine}
+            defaultOpen={hash === dua.id}
+          />
         ))}
       </div>
       <p className="mt-10 text-center text-xs text-muted-foreground">{t.duasCredit}</p>

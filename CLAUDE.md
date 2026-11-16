@@ -34,7 +34,7 @@ The exception is `/surah/$surah`: it (and the root, via its `ssr` function) is s
 - Stores hydrate with a fixed `serverValue` (`createStore` in `src/lib/store.ts`; prefs use `defaultPrefs`), then switch to the stored value.
 - The inline `prefsScript` in `__root.tsx` runs before first paint: it applies the theme and marks `<html>` with `data-lang`, `data-tr`, `data-latin`, `data-focus` and the Arabic size and face. The preview draws every translation and transliteration (`allVariants`, `data-show-tr`/`data-show-latin`), and CSS in `styles.css` shows the reader's. Interface text the server draws in English carries `data-i18n` and stays hidden for other languages until the app sets `data-hydrated`.
 - Chrome whose labels follow the language (the dock, sheets, prompts, running head) is wrapped in `ClientOnly`.
-When changing what the reader renders, keep its first browser render identical to the server's, or hydration fails. Check with the built app (`bun run build`, then `node .output/server/index.mjs`), not only `bun dev`.
+  When changing what the reader renders, keep its first browser render identical to the server's, or hydration fails. Check with the built app (`bun run build`, then `node .output/server/index.mjs`), not only `bun dev`.
 
 ### Server code (`src/server/`)
 

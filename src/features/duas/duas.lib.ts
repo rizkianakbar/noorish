@@ -21,6 +21,12 @@ export function categoryForHour(hour: number): string {
   return 'daily-dua';
 }
 
+/**
+ * Adhkar said in full as a daily routine, counted as they are said. The
+ * other categories are references, looked up for the moment at hand.
+ */
+export const ROUTINE_CATEGORIES = new Set(['morning-dhikr', 'evening-dhikr', 'dhikr-after-salah']);
+
 export interface DuaHit {
   dua: Dua;
   category: string;

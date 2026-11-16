@@ -1,4 +1,4 @@
-import { Check, Link2, NotebookPen } from 'lucide-react';
+import { Brain, Check, Link2, NotebookPen } from 'lucide-react';
 import { RouterAnchor } from '#/components/router-anchor.tsx';
 import { Drawer, DrawerContent, DrawerTitle } from '#/components/ui/drawer.tsx';
 import { useT } from '#/lib/i18n.ts';
@@ -10,6 +10,7 @@ export function VerseMoreSheet({
   open,
   onOpenChange,
   verseKey,
+  memorizeHref,
   signedIn,
   copied,
   onCopyLink,
@@ -18,6 +19,7 @@ export function VerseMoreSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   verseKey: string;
+  memorizeHref: string;
   signedIn: boolean;
   copied: boolean;
   onCopyLink: () => Promise<void>;
@@ -42,6 +44,10 @@ export function VerseMoreSheet({
             {copied ? <Check /> : <Link2 />}
             {copied ? t.copied : t.copyLink}
           </button>
+          <RouterAnchor href={memorizeHref} className={row} onClick={() => onOpenChange(false)}>
+            <Brain />
+            {t.memorizeFromHere}
+          </RouterAnchor>
           {signedIn ? (
             <button type="button" className={row} onClick={then(onNote)}>
               <NotebookPen />
