@@ -7,6 +7,7 @@ import type { ReactNode } from 'react';
 import { AppShell } from '#/components/app-shell.tsx';
 import { IOS_SPLASH_SCREENS, SPLASH_CSS, SPLASH_STAR } from '#/features/pwa/pwa.constants.ts';
 import { arabicFontFiles, criticalFontFiles } from '#/lib/fonts.ts';
+import { themeColors } from '#/lib/prefs.ts';
 import { pageHead } from '#/lib/seo.ts';
 import appCss from '#/styles.css?url';
 
@@ -17,9 +18,10 @@ export interface RouterContext {
 /**
  * Applies the saved theme before first paint so dark-mode readers don't get
  * a white flash while the app boots. Mirrors `useApplyPrefs` in app-shell.
- * It also preloads the reader's chosen Arabic font, which only the prefs know.
+ * It also sets the status bar colour (`theme-color`) to the theme, and
+ * preloads the reader's chosen Arabic font, which only the prefs know.
  */
-const prefsScript = `try{var p=JSON.parse(localStorage.getItem('quran:prefs')||'{}'),t=p.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'),r=document.documentElement;r.dataset.theme=t;r.classList.toggle('dark',t==='dark'||t==='night');var f=${JSON.stringify(arabicFontFiles)}[p.arabicFont]||${JSON.stringify(arabicFontFiles.amiri)},l=document.createElement('link');l.rel='preload';l.as='font';l.type='font/woff2';l.crossOrigin='';l.href=f;document.head.appendChild(l)}catch(e){}`;
+const prefsScript = `try{var p=JSON.parse(localStorage.getItem('quran:prefs')||'{}'),t=p.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'),r=document.documentElement;r.dataset.theme=t;r.classList.toggle('dark',t==='dark'||t==='night');var m=document.createElement('meta');m.name='theme-color';m.content=${JSON.stringify(themeColors)}[t]||'${themeColors.light}';document.head.appendChild(m);var f=${JSON.stringify(arabicFontFiles)}[p.arabicFont]||${JSON.stringify(arabicFontFiles.amiri)},l=document.createElement('link');l.rel='preload';l.as='font';l.type='font/woff2';l.crossOrigin='';l.href=f;document.head.appendChild(l)}catch(e){}`;
 
 /**
  * Fallbacks for the installed app's splash, which is pure CSS for its first
@@ -45,7 +47,6 @@ export const Route = createRootRouteWithContext<RouterContext>()({
           content: 'width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content',
         },
         ...page.meta,
-        { name: 'theme-color', content: '#1b2a4e' },
         // The name under the Home Screen icon on iOS.
         { name: 'apple-mobile-web-app-title', content: 'Noorish' },
         // Without this iOS ignores the launch images below and opens on a blank screen,

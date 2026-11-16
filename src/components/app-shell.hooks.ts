@@ -4,6 +4,7 @@ import { skipVerse, stop, togglePause } from '#/features/audio/audio.lib.ts';
 import { registerServiceWorker } from '#/features/pwa/pwa.lib.ts';
 import { onIdle } from '#/lib/idle.ts';
 import {
+  applyThemeColor,
   arabicFonts,
   closeDock,
   darkThemes,
@@ -13,7 +14,7 @@ import {
   toggleDock,
   usePrefs,
 } from '#/lib/prefs.ts';
-import { getSurah } from '#/lib/quran/data.ts';
+import { prefetchSurah } from '#/lib/quran/data.ts';
 import { useShortcut } from '#/lib/shortcuts.ts';
 
 /**
@@ -26,6 +27,7 @@ export function useApplyPrefs() {
     const root = document.documentElement;
     root.dataset.theme = prefs.theme;
     root.classList.toggle('dark', darkThemes.has(prefs.theme));
+    applyThemeColor(prefs.theme);
     root.lang = prefs.language;
     root.style.setProperty('--arabic-font', arabicFonts[prefs.arabicFont].family);
     root.style.setProperty('--arabic-size', `${prefs.arabicSize}rem`);
@@ -42,10 +44,11 @@ function onSlowOrMeteredConnection(): boolean {
 }
 
 /**
- * Once the app settles, pull every surah into memory one at a time while the
- * browser is idle (~11 MB of JSON), so opening any surah after that is a
- * memory read: no fetch, no parse, no skeleton. Skipped on Save-Data or a
- * slow connection.
+ * Once the app settles, pull every surah into the caches one at a time while
+ * the browser is idle (~11 MB of JSON), so any surah opens offline and
+ * without the network. Not parsed or kept in memory: holding all of it
+ * (twice, with search) got installed iOS apps killed. Skipped on Save-Data
+ * or a slow connection.
  */
 export function usePrefetchAllSurahs() {
   useEffect(() => {
@@ -55,7 +58,7 @@ export function usePrefetchAllSurahs() {
     let n = 1;
     const next = () => {
       if (cancelled || n > 114) return;
-      void getSurah(n++)
+      void prefetchSurah(n++)
         .catch(() => {})
         .finally(() => {
           cancelIdle = onIdle(next);

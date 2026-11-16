@@ -20,6 +20,30 @@ export type DockView = 'surahs' | 'search' | 'journal' | 'shortcuts';
 export const themes: Theme[] = ['light', 'dark', 'sepia', 'night'];
 export const darkThemes = new Set<Theme>(['dark', 'night']);
 
+/**
+ * Each theme's `--background` (styles.css) as hex, for the browser's
+ * `theme-color`, so the status bar matches the page.
+ */
+export const themeColors: Record<Theme, string> = {
+  light: '#f2f4f6',
+  dark: '#09152c',
+  sepia: '#f6ebdb',
+  night: '#000000',
+};
+
+/**
+ * Point the `theme-color` meta tag at a theme, creating the tag if needed.
+ */
+export function applyThemeColor(theme: Theme) {
+  let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.name = 'theme-color';
+    document.head.appendChild(meta);
+  }
+  meta.content = themeColors[theme];
+}
+
 export const arabicFonts: Record<ArabicFont, { label: string; family: string }> = {
   amiri: { label: 'Amiri Quran', family: "'Amiri Quran'" },
   scheherazade: { label: 'Scheherazade New', family: "'Scheherazade New'" },
