@@ -8,10 +8,11 @@ Package manager is Bun (`bun.lock`); all commands are `package.json` scripts. Th
 - `bun dev` — TanStack Start dev server on port 3000 (`--strictPort`: fails rather than drifting to another port)
 - `bun check` — Biome format+lint (auto-fixes, `--write --unsafe`) + `tsgo --noEmit`
 - `bun run test` — Vitest (note: `bun test` runs Bun's own runner, not Vitest)
-- `bun run build` — production build into `.output/` (Nitro; picks the Vercel preset automatically on Vercel)
+- `bun run build` — production build into `.output/` (Nitro; picks the Vercel preset automatically on Vercel). It prerenders the 114 surah pages by booting the production server, so it needs the production env (`BETTER_AUTH_SECRET`, `DATABASE_URL`); Vercel provides them at build time
 - `bun db:generate` — SQL migration from schema changes into `drizzle/` · `bun db:migrate` · `bun db:push` (prototyping) · `bun db:studio` (port 4444)
 - `bun db:seed` — truncate and reseed (`test@example.com` / `password123`, plus a few bookmarks/notes)
-- `bun quran:fetch` — download Quran content into `public/quran/`
+- `bun quran:fetch` — download the surahs (every language in one file) into `data/quran/` and tafsir into `public/quran/tafsir/`, then run `quran:build`
+- `bun quran:build` — split `data/quran/` into the served files: `public/quran/{n}.json` (no translations), `public/quran/{en,id}/{n}.json` (translation + word meanings) and the search index `public/quran/search-{en,id}.json`. Rerun after changing `data/quran/`, `src/lib/quran/surah-files.ts` or the folding in `search.lib.ts`; tests fail when they're out of step
 - `bun duas:fetch` — download duas into `public/duas/` (category list bundled in `src/features/duas/duas-index.json`)
 - `bun hadith:fetch` — rebuild `src/features/hadith/hadith-index.json` (hadith text loads from the hadith-api CDN a book at a time)
 - `bun pwa:splash` — render the PWA icons and iOS launch images with local Chrome
@@ -27,7 +28,13 @@ There is no separate API server: the backend is TanStack Start server functions 
 
 ### Rendering
 
-`src/start.ts` sets `defaultSsr: false`: the document shell and `<head>` (`shellComponent` in `src/routes/__root.tsx`) are server-rendered, but route components render on the client because the reader depends on per-device state in localStorage (theme, language, translation, progress). An inline script in `__root.tsx` applies the saved theme before first paint. Module-level code in `src/lib/` is still imported on the server, so guard browser globals (`typeof window !== 'undefined'`). Because child routes don't render on the server, their own `head()` never reaches the server HTML: per-page titles, canonicals, Open Graph tags and JSON-LD are built in the root route's `head()` by `pageHead()` in `src/lib/seo.ts`, so add new indexable pages there.
+`src/start.ts` sets `defaultSsr: false`: the document shell and `<head>` (`shellComponent` in `src/routes/__root.tsx`) are server-rendered, but route components render on the client because the reader depends on per-device state in localStorage (theme, language, translation, progress). Module-level code in `src/lib/` is still imported on the server, so guard browser globals (`typeof window !== 'undefined'`). Because child routes don't render on the server, their own `head()` never reaches the server HTML: per-page titles, canonicals, Open Graph tags and JSON-LD are built in the root route's `head()` by `pageHead()` in `src/lib/seo.ts`, so add new indexable pages there.
+
+The exception is `/surah/$surah`: it (and the root, via its `ssr` function) is server-rendered and prerendered at build for all 114 surahs (`vite.config.ts`), with its first 20 verses (`readSurahPreview` in `src/server/quran.server.ts`), so the text paints before any script runs. The server can't read the reader's prefs, so it has to draw something every reader can use:
+- Stores hydrate with a fixed `serverValue` (`createStore` in `src/lib/store.ts`; prefs use `defaultPrefs`), then switch to the stored value.
+- The inline `prefsScript` in `__root.tsx` runs before first paint: it applies the theme and marks `<html>` with `data-lang`, `data-tr`, `data-latin`, `data-focus` and the Arabic size and face. The preview draws every translation and transliteration (`allVariants`, `data-show-tr`/`data-show-latin`), and CSS in `styles.css` shows the reader's. Interface text the server draws in English carries `data-i18n` and stays hidden for other languages until the app sets `data-hydrated`.
+- Chrome whose labels follow the language (the dock, sheets, prompts, running head) is wrapped in `ClientOnly`.
+When changing what the reader renders, keep its first browser render identical to the server's, or hydration fails. Check with the built app (`bun run build`, then `node .output/server/index.mjs`), not only `bun dev`.
 
 ### Server code (`src/server/`)
 
@@ -60,7 +67,7 @@ Tests sit next to the file they cover and are named after it: `features/audio/au
 
 Code is organised by feature. `src/features/<feature>/` holds everything one feature owns, every file prefixed with the feature name: `<feature>-page.tsx` and other components (`reader-header.tsx`, `verse-card-actions.tsx`), `<feature>.hooks.ts`, `<feature>.lib.ts` (logic, no React), `<feature>.api.ts` (fetching), `<feature>.types.ts`. Features: `reader` (surah page, verse cards, mushaf), `audio` (recitation player), `search` (Web Worker index), `tafsir`, `notes`, `journal`, `surahs`, `dock`, `home`, `settings`, `auth`. Anything used across features is global: `src/components/` (`ui/` design system, `ornament/`, `app-shell`, `router-anchor`), `src/hooks/`, `src/lib/` (`store`, `prefs`, `i18n`, `shortcuts`, `progress`, `fonts`, `seo`, `quran/` data). Don't name a file `*.client.*` or `*.server.*` unless you mean it: Start's import protection treats those as client-only/server-only.
 
-Routes in `src/routes/` stay thin: route options (params, loader, fallbacks) plus the feature's page component. `src/routeTree.gen.ts` is generated, never hand-edit it. The router (`src/router.tsx`) creates a fresh `QueryClient` per request and passes it as router context. Quran content is static JSON under `public/quran/`, loaded by `src/lib/quran/data.ts` and cached long by `vercel.json` headers. The one exception is the chapter list, `src/lib/quran/chapters.json`: it is imported (bundled) because the server needs it for page titles, and Vite refuses imports from `public/`.
+Routes in `src/routes/` stay thin: route options (params, loader, fallbacks) plus the feature's page component. `src/routeTree.gen.ts` is generated, never hand-edit it. The router (`src/router.tsx`) creates a fresh `QueryClient` per request and passes it as router context. Quran content is static JSON under `public/quran/` (built by `bun quran:build`), loaded by `src/lib/quran/data.ts`, which fetches a surah's base file plus only the translation files the reader's prefs need (`surahLangs`) and merges them (`mergeSurah`); files are cached long by `vercel.json` headers. The one exception is the chapter list, `src/lib/quran/chapters.json`: it is imported (bundled) because the server needs it for page titles, and Vite refuses imports from `public/`.
 
 ### Design system (`src/components/ui/`)
 

@@ -5,7 +5,7 @@ import type { SearchRequest, SearchResponse } from './search.types.ts';
 
 /**
  * Full-text search over all 6,236 verses, off the main thread. The index is
- * prebuilt and prefolded per language (`bun search:index`), so it is one
+ * prebuilt and prefolded per language (`bun quran:build`), so it is one
  * fetch and one parse; each language is loaded once and kept for the session.
  */
 

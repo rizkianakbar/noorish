@@ -6,7 +6,7 @@ import type { HadithBook, HadithCollection, HadithIndex } from '#/features/hadit
 import hadithIndexJson from '#/features/hadith/hadith-index.json' with { type: 'json' };
 import { messagesFor } from './i18n.ts';
 import chapters from './quran/chapters.json' with { type: 'json' };
-import { surahPath } from './quran/data.ts';
+import { surahPath } from './quran/surah-files.ts';
 import type { Chapter } from './quran/types.ts';
 
 /**
@@ -150,7 +150,9 @@ function surahHead(chapter: Chapter): Head {
     links: [
       ...links,
       // Fetch the verses alongside the JS instead of after it runs; `crossOrigin`
-      // matches `fetch()`'s default, so `getSurah` reuses this response.
+      // matches `fetch()`'s default, so `getSurah` reuses this response. The
+      // translation file is preloaded by the early prefs script in __root, which
+      // knows the reader's language.
       { rel: 'preload', as: 'fetch', href: surahPath(chapter.number), crossOrigin: 'anonymous' },
     ],
     scripts: [

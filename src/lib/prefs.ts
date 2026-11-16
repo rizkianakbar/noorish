@@ -77,25 +77,33 @@ export interface Prefs {
   planOnHome: boolean;
 }
 
+const defaultPrefs: Prefs = {
+  language: 'en',
+  theme: 'light',
+  arabicFont: 'amiri',
+  arabicSize: 2,
+  translation: 'auto',
+  latin: true,
+  latinStyle: 'kemenag',
+  wordByWord: true,
+  focusMode: false,
+  reciter: 7,
+  playbackRate: 1,
+  planOnHome: true,
+};
+
 const prefersDark = typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches;
 
 export const prefsStore = createStore<Prefs>(
   {
+    ...defaultPrefs,
     // Optional chaining: some server runtimes (Bun) have a navigator without a language.
     language: typeof navigator !== 'undefined' && navigator.language?.startsWith('id') ? 'id' : 'en',
     theme: prefersDark ? 'dark' : 'light',
-    arabicFont: 'amiri',
-    arabicSize: 2,
-    translation: 'auto',
-    latin: true,
-    latinStyle: 'kemenag',
-    wordByWord: true,
-    focusMode: false,
-    reciter: 7,
-    playbackRate: 1,
-    planOnHome: true,
   },
-  { key: 'quran:prefs' },
+  // The same on every device, so a server-rendered page hydrates; what differs
+  // per reader is shown by CSS until then (see `prefsScript` in __root).
+  { key: 'quran:prefs', serverValue: defaultPrefs },
 );
 
 export function usePrefs() {
@@ -112,6 +120,15 @@ export function setPref<K extends keyof Prefs>(key: K, value: Prefs[K]) {
 export function resolveTranslation(prefs: Prefs): Language | null {
   if (prefs.translation === 'off') return null;
   return prefs.translation === 'auto' ? prefs.language : prefs.translation;
+}
+
+/**
+ * The translation files a surah needs: the translation shown (or the UI
+ * language, which home and memorize fall back to) and the UI language, for
+ * word meanings. Usually one language.
+ */
+export function surahLangs(prefs: Prefs): Language[] {
+  return [...new Set([resolveTranslation(prefs) ?? prefs.language, prefs.language])];
 }
 
 /**

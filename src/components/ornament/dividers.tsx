@@ -18,6 +18,7 @@ export function VerseDivider({ page }: { page?: number }) {
       <span aria-hidden="true" className="h-px grow bg-linear-to-r from-transparent via-gold/35 to-gold/50" />
       {page ? (
         <span
+          data-i18n
           title={t.mushafPage(page)}
           className="flex h-6 items-center gap-1.5 rounded-full px-2.5 text-[11px] text-gold-ink ring-1 ring-gold/40">
           <span className="sr-only">{t.mushafPage(page)}</span>
@@ -76,7 +77,7 @@ export function JuzMarker({ juz }: { juz: number }) {
       <span className="h-px grow bg-linear-to-r from-transparent to-gold/60" />
       <span className="dark relative flex h-9 items-center gap-2.5 overflow-hidden rounded-full bg-(--ornament-field) px-4 text-foreground ring-1 ring-gold/50">
         <Lattice size={18} />
-        <span className="relative font-serif text-sm">
+        <span data-i18n className="relative font-serif text-sm">
           {t.juz} <span className="text-gold tabular-nums">{juz}</span>
         </span>
         <span aria-hidden="true" className="relative h-4 w-px bg-gold/40" />

@@ -23,7 +23,13 @@ export default defineConfig({
       },
     }),
     tailwindcss(),
-    tanstackStart(),
+    tanstackStart({
+      // Every surah page as static HTML with its opening verses (see the surah
+      // route), served from the CDN: the text paints before any script runs and
+      // crawlers read it. Nothing else is server-rendered.
+      pages: Array.from({ length: 114 }, (_, i) => ({ path: `/surah/${i + 1}` })),
+      prerender: { enabled: true, crawlLinks: false, autoStaticPathsDiscovery: false, failOnError: true },
+    }),
     react(),
     pwa(),
   ],

@@ -53,7 +53,9 @@ export function ReaderHeader({
   const translatedName = chapterTranslatedName(chapter, prefs.language);
 
   return (
-    <header ref={ref} className="pt-8 pb-10 sm:pt-10">
+    // data-i18n: its labels follow the reader's language, which a server-drawn
+    // page only knows once the app runs (see styles.css).
+    <header ref={ref} data-i18n className="pt-8 pb-10 sm:pt-10">
       <h1 className="sr-only">
         {chapter.nameSimple}, {translatedName}
       </h1>

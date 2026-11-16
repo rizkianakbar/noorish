@@ -1,3 +1,4 @@
+import { ClientOnly } from '@tanstack/react-router';
 import { lazy, type ReactNode, Suspense, useEffect } from 'react';
 import { Dock } from '#/features/dock/dock.tsx';
 import { usePlanSync } from '#/features/plans/plans.hooks.ts';
@@ -38,6 +39,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   usePrayerPush(Boolean(prayer.place && prayer.notify));
   // The installed app's splash leaves once the page under it is ready.
   useEffect(hideSplash, []);
+  // Interface text a server-rendered page drew in English shows from here
+  // (see `data-i18n` in styles.css).
+  useEffect(() => {
+    document.documentElement.dataset.hydrated = '';
+  }, []);
 
   return (
     // The document scrolls, not an inner box (see `src/lib/page-scroll.ts`). With
@@ -49,16 +55,20 @@ export function AppShell({ children }: { children: ReactNode }) {
         {t.skipToContent}
       </a>
       <div className="relative flex min-w-0 grow">{children}</div>
-      <Suspense fallback={null}>
-        <DockSheet />
-      </Suspense>
-      <PwaUpdatePrompt />
-      {prayer.place && prayer.reminders && (
+      {/* Browser-only chrome: its labels follow the reader's language, which a
+          server-rendered surah page can't know. */}
+      <ClientOnly>
         <Suspense fallback={null}>
-          <PrayerReminder />
+          <DockSheet />
         </Suspense>
-      )}
-      <Dock />
+        <PwaUpdatePrompt />
+        {prayer.place && prayer.reminders && (
+          <Suspense fallback={null}>
+            <PrayerReminder />
+          </Suspense>
+        )}
+        <Dock />
+      </ClientOnly>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { toggleVerse } from '#/features/audio/audio.lib.ts';
 import { lazyOnIdle } from '#/lib/idle.ts';
 import type { Language } from '#/lib/prefs.ts';
 import { isSajdah } from '#/lib/quran/sajdah.ts';
+import { QURAN_LANGS } from '#/lib/quran/surah-files.ts';
 import type { Verse } from '#/lib/quran/types.ts';
 import { useCopyVerseLink, useLazyDrawer } from './verse-card.hooks.ts';
 import { VerseActions } from './verse-card-actions.tsx';
@@ -21,6 +22,9 @@ const TafsirPanel = lazyOnIdle(() =>
 const VerseMoreSheet = lazyOnIdle(() =>
   import('./verse-card-more-sheet.tsx').then((m) => ({ default: m.VerseMoreSheet })),
 );
+
+const LATIN_CLASS = 'mt-4 max-w-[65ch] font-serif text-[1.0625rem] leading-[1.7] text-gold-ink italic';
+const TRANSLATION_CLASS = 'mt-4 max-w-[65ch] font-serif text-[1.0625rem] leading-[1.75] text-foreground/80';
 
 export interface VerseCardProps {
   surah: number;
@@ -44,6 +48,11 @@ export interface VerseCardProps {
   note: string | null;
   signedIn: boolean;
   onToggleBookmark: (verse: number) => void;
+  /**
+   * Draw every translation and transliteration, for the server-rendered page,
+   * which can't know the reader's choice; CSS shows theirs.
+   */
+  allVariants?: boolean;
 }
 
 export const VerseCard = memo(function VerseCard({
@@ -58,6 +67,7 @@ export const VerseCard = memo(function VerseCard({
   note,
   signedIn,
   onToggleBookmark,
+  allVariants = false,
 }: VerseCardProps) {
   const sajdah = isSajdah(verse.key);
   const [tafsirOpen, setTafsirOpen] = useState(false);
@@ -102,17 +112,30 @@ export const VerseCard = memo(function VerseCard({
           selectedWords={selectedWords}
         />
 
-        {latin && (
-          <p
-            lang="ar-Latn"
-            className="mt-4 max-w-[65ch] font-serif text-[1.0625rem] leading-[1.7] text-gold-ink italic">
-            {latin}
-          </p>
-        )}
-        {translation && (
-          <p className="mt-4 max-w-[65ch] font-serif text-[1.0625rem] leading-[1.75] text-foreground/80">
-            {verse[translation]}
-          </p>
+        {allVariants ? (
+          // Server-rendered: every variant, and CSS shows the reader's (see styles.css).
+          <>
+            <p lang="ar-Latn" data-show-latin="kemenag" className={LATIN_CLASS}>
+              {verse.latinId}
+            </p>
+            <p lang="ar-Latn" data-show-latin="simple" className={LATIN_CLASS}>
+              {verse.latinEn}
+            </p>
+            {QURAN_LANGS.map((lang) => (
+              <p key={lang} lang={lang} data-show-tr={lang} className={TRANSLATION_CLASS}>
+                {verse[lang]}
+              </p>
+            ))}
+          </>
+        ) : (
+          <>
+            {latin && (
+              <p lang="ar-Latn" className={LATIN_CLASS}>
+                {latin}
+              </p>
+            )}
+            {translation && <p className={TRANSLATION_CLASS}>{verse[translation]}</p>}
+          </>
         )}
 
         {sajdah && <SajdahNote />}

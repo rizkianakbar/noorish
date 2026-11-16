@@ -64,6 +64,15 @@ export interface ReaderVersesProps {
   noteByVerse: Map<number, string>;
   bookmarkedVerses: Set<number>;
   onToggleBookmark: (verse: number) => void;
+  /**
+   * Showing the server's opening verses, until the full surah loads.
+   */
+  prerendered: boolean;
+  /**
+   * Fade the verses in; off when the server drew them, so the ones already on
+   * screen don't fade in again as the rest arrive.
+   */
+  fadeIn: boolean;
 }
 
 /**
@@ -78,6 +87,8 @@ export function ReaderVerses({
   noteByVerse,
   bookmarkedVerses,
   onToggleBookmark,
+  prerendered,
+  fadeIn,
 }: ReaderVersesProps) {
   const prefs = usePrefs();
   const player = usePlayer();
@@ -90,7 +101,10 @@ export function ReaderVerses({
 
   const translation = resolveTranslation(prefs);
   return (
-    <div ref={listRef} className="animate-in duration-300 fade-in">
+    <div
+      ref={listRef}
+      data-prerendered={prerendered ? '' : undefined}
+      className={fadeIn ? 'animate-in duration-300 fade-in' : undefined}>
       {surahData.verses.map((verse, i) => (
         <Fragment key={verse.key}>
           {i > 0 && <VerseSeparator verse={verse} previous={surahData.verses[i - 1]} />}
@@ -108,6 +122,7 @@ export function ReaderVerses({
             note={noteByVerse.get(verse.n) ?? null}
             signedIn={signedIn}
             onToggleBookmark={onToggleBookmark}
+            allVariants={prerendered}
           />
         </Fragment>
       ))}

@@ -3,6 +3,11 @@ import { useSyncExternalStore } from 'react';
 /**
  * A minimal external store: `get`/`set`/`subscribe` plus a React hook that
  * re-renders on change. Optionally persisted to localStorage under `key`.
+ *
+ * Server-rendered pages (the surah reader) render and hydrate with
+ * `serverValue` (by default `initial`): the server can't read this device's
+ * storage, so the first browser render must match what it drew. React then
+ * re-renders with the stored value straight after hydrating.
  */
 export interface Store<T> {
   get: () => T;
@@ -32,8 +37,12 @@ function writeStorage(key: string, value: unknown) {
   }
 }
 
-export function createStore<T>(initial: T, opts: { key?: string; persistDelayMs?: number } = {}): Store<T> {
-  const { key, persistDelayMs = 0 } = opts;
+export function createStore<T>(
+  initial: T,
+  opts: { key?: string; persistDelayMs?: number; serverValue?: T } = {},
+): Store<T> {
+  const { key, persistDelayMs = 0, serverValue = initial } = opts;
+  const getServerSnapshot = () => serverValue;
   let value = key ? readStorage(key, initial) : initial;
   const listeners = new Set<() => void>();
   let persistTimer: ReturnType<typeof setTimeout> | undefined;
@@ -65,7 +74,7 @@ export function createStore<T>(initial: T, opts: { key?: string; persistDelayMs?
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
-    use: () => useSyncExternalStore(store.subscribe, store.get),
+    use: () => useSyncExternalStore(store.subscribe, store.get, getServerSnapshot),
   };
 
   return store;

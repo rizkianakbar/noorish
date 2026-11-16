@@ -215,7 +215,7 @@ export function MemorizeSession(props: MemorizeSessionProps) {
   // Every word of the surah: where the word bank's extra tiles come from.
   const arabicPool = useMemo(() => surahData?.verses.flatMap((v) => arabicWords(v.words)) ?? [], [surahData]);
   const meaningPool = useMemo(
-    () => surahData?.verses.flatMap((v) => meaningWords(v[translation])) ?? [],
+    () => surahData?.verses.flatMap((v) => meaningWords(v[translation] ?? '')) ?? [],
     [surahData, translation],
   );
 
@@ -345,7 +345,7 @@ export function MemorizeSession(props: MemorizeSessionProps) {
               revealed={EMPTY}
               onReveal={() => {}}
               recitedWord={recited(verse.n)}
-              translation={meaningShown ? verse[meaningShown] : null}
+              translation={meaningShown ? (verse[meaningShown] ?? null) : null}
               size="large"
             />
           )}
@@ -368,7 +368,7 @@ export function MemorizeSession(props: MemorizeSessionProps) {
                 key={`${verse.key}:${step.part}:${round}`}
                 seed={`${verse.key}:${step.part}:${round}`}
                 part={step.part}
-                words={step.part === 'arabic' ? arabicWords(verse.words) : meaningWords(verse[translation])}
+                words={step.part === 'arabic' ? arabicWords(verse.words) : meaningWords(verse[translation] ?? '')}
                 pool={step.part === 'arabic' ? arabicPool : meaningPool}
                 onContinue={() => built(verse.n, step.part)}
                 onListenAgain={() => go({ kind: 'listen', verse: verse.n })}
@@ -389,7 +389,7 @@ export function MemorizeSession(props: MemorizeSessionProps) {
                     revealed={revealed.get(n) ?? EMPTY}
                     onReveal={(word) => reveal(n, word)}
                     recitedWord={recited(n)}
-                    translation={meaningShown ? v[meaningShown] : null}
+                    translation={meaningShown ? (v[meaningShown] ?? null) : null}
                   />
                 )
               );

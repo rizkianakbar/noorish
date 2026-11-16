@@ -3,6 +3,8 @@ import { usePrefs } from '#/lib/prefs.ts';
 const BISMILLAH = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ';
 const BISMILLAH_LATIN = { kemenag: 'Bismillāhir-raḥmānir-raḥīm', simple: 'Bismillahir rahmanir raheem' };
 
+const LATIN_CLASS = 'mt-1 text-center font-serif text-sm text-gold-ink italic';
+
 function Diamond() {
   return (
     <svg viewBox="0 0 20 20" aria-hidden="true" className="size-3 shrink-0 text-gold">
@@ -11,7 +13,7 @@ function Diamond() {
   );
 }
 
-export function ReaderBismillah() {
+export function ReaderBismillah({ allVariants = false }: { allVariants?: boolean }) {
   const prefs = usePrefs();
 
   return (
@@ -26,11 +28,19 @@ export function ReaderBismillah() {
         </p>
         <Diamond />
       </div>
-      {prefs.latin && !prefs.focusMode && (
-        <p lang="ar-Latn" className="mt-1 text-center font-serif text-sm text-gold-ink italic">
-          {BISMILLAH_LATIN[prefs.latinStyle]}
-        </p>
-      )}
+      {allVariants
+        ? // Server-rendered: both styles, and CSS shows the reader's.
+          (['kemenag', 'simple'] as const).map((style) => (
+            <p key={style} lang="ar-Latn" data-show-latin={style} className={LATIN_CLASS}>
+              {BISMILLAH_LATIN[style]}
+            </p>
+          ))
+        : prefs.latin &&
+          !prefs.focusMode && (
+            <p lang="ar-Latn" className={LATIN_CLASS}>
+              {BISMILLAH_LATIN[prefs.latinStyle]}
+            </p>
+          )}
     </div>
   );
 }

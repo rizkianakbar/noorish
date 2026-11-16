@@ -247,6 +247,28 @@
   font-family: var(--font-kufi);
 }
 
+/*
+ * Server-rendered surah pages draw every translation and transliteration
+ * (the server can't know the reader's); `prefsScript` in __root marks <html>
+ * with the reader's choice before first paint, and these hide the rest.
+ */
+html:not([data-tr='en']) [data-show-tr='en'],
+html:not([data-tr='id']) [data-show-tr='id'],
+html:not([data-latin='kemenag']) [data-show-latin='kemenag'],
+html:not([data-latin='simple']) [data-show-latin='simple'] {
+  display: none;
+}
+
+/*
+ * Until the app runs: the server draws interface text in English, so other
+ * readers see it only then (space kept, nothing moves); focus-mode readers
+ * get the mushaf instead of the server's verse cards.
+ */
+html:not([data-lang='en']):not([data-hydrated]) [data-i18n],
+html[data-focus]:not([data-hydrated]) [data-prerendered] {
+  visibility: hidden;
+}
+
 /* Off-screen verses skip layout and paint; long surahs stay smooth. */
 .verse-card {
   content-visibility: auto;

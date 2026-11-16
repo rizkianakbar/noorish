@@ -1,9 +1,9 @@
-import type { Verse } from '#/lib/quran/types.ts';
+import type { SourceSurah } from '#/lib/quran/types.ts';
 import type { SearchHit } from './search.types.ts';
 
 /**
  * Text folding shared by the search worker, the results view and the index
- * build (`bun search:index`).
+ * build (`bun quran:build`).
  */
 
 /**
@@ -48,7 +48,7 @@ export type IndexedVerse = [number, number, string, string, string, string, stri
 
 export const searchIndexPath = (lang: SearchLang) => `/quran/search-${lang}.json`;
 
-export function toIndexedVerse(surah: number, verse: Verse, lang: SearchLang): IndexedVerse {
+export function toIndexedVerse(surah: number, verse: SourceSurah['verses'][number], lang: SearchLang): IndexedVerse {
   return [
     surah,
     verse.n,

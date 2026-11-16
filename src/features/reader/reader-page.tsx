@@ -1,9 +1,11 @@
+import { ClientOnly } from '@tanstack/react-router';
 import { useRef } from 'react';
 import { SurahEnd } from '#/components/ornament/dividers.tsx';
 import { useReaderFontsReady } from '#/hooks/use-reader-fonts-ready.ts';
 import { authClient } from '#/lib/auth-client.ts';
 import { usePrefs } from '#/lib/prefs.ts';
 import { useChapters, useSurah } from '#/lib/quran/data.ts';
+import type { SurahData } from '#/lib/quran/types.ts';
 import { cn } from '#/lib/utils.ts';
 import {
   useReaderShortcuts,
@@ -23,10 +25,13 @@ import { ReaderSurahNav } from './reader-surah-nav.tsx';
 import { ReaderVerses } from './reader-verses.tsx';
 import { WordPopover } from './reader-word-popover.tsx';
 
-export function ReaderPage({ surah }: { surah: number }) {
+export function ReaderPage({ surah, preview }: { surah: number; preview: SurahData | null }) {
   const prefs = usePrefs();
   const { data: chapters, isError: chaptersMissing } = useChapters();
-  const surahData = useSurah(surah);
+  const loaded = useSurah(surah);
+  // A server-rendered page shows its opening verses until the full surah lands.
+  const prerendered = !loaded && preview?.surah === surah;
+  const surahData = loaded ?? (prerendered ? preview : undefined);
   const fontsReady = useReaderFontsReady(prefs.arabicFont);
   const signedIn = !!authClient.useSession().data;
   const mainRef = useRef<HTMLElement>(null);
@@ -51,7 +56,9 @@ export function ReaderPage({ surah }: { surah: number }) {
   return (
     <>
       <main ref={mainRef} id="main-content" tabIndex={-1} {...handlers} className="min-w-0 grow outline-none">
-        {chapter && <RunningHead chapter={chapter} headerRef={headerRef} rootRef={mainRef} controls={controls} />}
+        <ClientOnly>
+          {chapter && <RunningHead chapter={chapter} headerRef={headerRef} rootRef={mainRef} controls={controls} />}
+        </ClientOnly>
         {/* Laid out but transparent until the fonts land, so their swap reflows nothing anyone sees. */}
         <div
           className={cn(
@@ -63,7 +70,7 @@ export function ReaderPage({ surah }: { surah: number }) {
           ) : (
             <div className="mt-8 mb-10 aspect-1000/240 w-full animate-pulse rounded-2xl bg-muted sm:mt-10" />
           )}
-          {chapter?.bismillahPre && <ReaderBismillah />}
+          {chapter?.bismillahPre && <ReaderBismillah allVariants={prerendered} />}
           {surahData && (
             <ReaderVerses
               key={surah}
@@ -74,11 +81,13 @@ export function ReaderPage({ surah }: { surah: number }) {
               noteByVerse={annotations.noteByVerse}
               bookmarkedVerses={annotations.bookmarkedVerses}
               onToggleBookmark={annotations.toggleBookmark}
+              prerendered={prerendered}
+              fadeIn={preview?.surah !== surah}
             />
           )}
           {/* The end matter waits for the verses, or it flashes under the header while they load. */}
-          {chapter && surahData && <SurahEnd surah={surah} name={chapter.nameSimple} />}
-          {surahData && <ReaderSurahNav prev={prev} next={next} />}
+          {chapter && loaded && <SurahEnd surah={surah} name={chapter.nameSimple} />}
+          {loaded && <ReaderSurahNav prev={prev} next={next} />}
         </div>
       </main>
 

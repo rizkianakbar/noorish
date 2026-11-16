@@ -11,6 +11,8 @@ export function useMediaQuery(query: string): boolean {
       return () => list.removeEventListener('change', onChange);
     },
     () => matchMedia(query).matches,
+    // Server-rendered pages draw (and hydrate) the wide layout first.
+    () => false,
   );
 }
 

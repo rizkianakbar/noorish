@@ -7,7 +7,7 @@ import duaIndexJson from '#/features/duas/duas-index.json' with { type: 'json' }
 import { searchHadith } from '#/features/hadith/hadith.lib.ts';
 import type { HadithIndex } from '#/features/hadith/hadith.types.ts';
 import hadithIndexJson from '#/features/hadith/hadith-index.json' with { type: 'json' };
-import type { SurahData } from '#/lib/quran/types.ts';
+import type { SourceSurah } from '#/lib/quran/types.ts';
 import {
   type IndexedVerse,
   matchesAll,
@@ -66,10 +66,12 @@ describe('searching hadith', () => {
 describe('the verse search index', () => {
   const index = read<IndexedVerse[]>(searchIndexPath('en'));
 
-  it('is in step with the surah files and the folding (else run `bun search:index`)', () => {
+  it('is in step with the surah files and the folding (else run `bun quran:build`)', () => {
     expect(index).toHaveLength(6236);
     for (const n of [1, 2, 114]) {
-      const surah = read<SurahData>(`quran/${n}.json`);
+      const surah: SourceSurah = JSON.parse(
+        readFileSync(join(import.meta.dirname, `../../../data/quran/${n}.json`), 'utf8'),
+      );
       expect(index.filter(([s]) => s === n)).toEqual(surah.verses.map((v) => toIndexedVerse(n, v, 'en')));
     }
   });

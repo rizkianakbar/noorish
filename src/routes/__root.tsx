@@ -7,7 +7,7 @@ import type { ReactNode } from 'react';
 import { AppShell } from '#/components/app-shell.tsx';
 import { IOS_SPLASH_SCREENS, SPLASH_CSS, SPLASH_STAR } from '#/features/pwa/pwa.constants.ts';
 import { arabicFontFiles, criticalFontFiles } from '#/lib/fonts.ts';
-import { themeColors } from '#/lib/prefs.ts';
+import { arabicFonts, themeColors } from '#/lib/prefs.ts';
 import { pageHead } from '#/lib/seo.ts';
 import appCss from '#/styles.css?url';
 
@@ -18,10 +18,15 @@ export interface RouterContext {
 /**
  * Applies the saved theme before first paint so dark-mode readers don't get
  * a white flash while the app boots. Mirrors `useApplyPrefs` in app-shell.
+ * It also marks <html> with the reading prefs a server-rendered surah page
+ * can't know (language, translation, transliteration, focus mode, Arabic
+ * size and face), so CSS shows the reader's own from the first paint.
  * It also sets the status bar colour (`theme-color`) to the theme, and
- * preloads the reader's chosen Arabic font, which only the prefs know.
+ * preloads what only the prefs know: the chosen Arabic font and, on a surah,
+ * its translation file(s) (`surahLangs` in prefs.ts; the base file is
+ * preloaded by `seo.ts`).
  */
-const prefsScript = `try{var p=JSON.parse(localStorage.getItem('quran:prefs')||'{}'),t=p.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'),r=document.documentElement;r.dataset.theme=t;r.classList.toggle('dark',t==='dark'||t==='night');var m=document.createElement('meta');m.name='theme-color';m.content=${JSON.stringify(themeColors)}[t]||'${themeColors.light}';document.head.appendChild(m);var f=${JSON.stringify(arabicFontFiles)}[p.arabicFont]||${JSON.stringify(arabicFontFiles.amiri)},l=document.createElement('link');l.rel='preload';l.as='font';l.type='font/woff2';l.crossOrigin='';l.href=f;document.head.appendChild(l)}catch(e){}`;
+const prefsScript = `try{var p=JSON.parse(localStorage.getItem('quran:prefs')||'{}'),t=p.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'),r=document.documentElement;r.dataset.theme=t;r.classList.toggle('dark',t==='dark'||t==='night');var m=document.createElement('meta');m.name='theme-color';m.content=${JSON.stringify(themeColors)}[t]||'${themeColors.light}';document.head.appendChild(m);var pl=function(h,a){var l=document.createElement('link');l.rel='preload';l.as=a;l.crossOrigin='';if(a==='font')l.type='font/woff2';l.href=h;document.head.appendChild(l)};pl(${JSON.stringify(arabicFontFiles)}[p.arabicFont]||${JSON.stringify(arabicFontFiles.amiri)},'font');var g=p.language||(/^id/.test(navigator.language)?'id':'en'),tr=p.translation&&p.translation!=='auto'&&p.translation!=='off'?p.translation:g;r.dataset.lang=g;r.dataset.tr=p.translation==='off'?'off':tr;r.dataset.latin=p.latin===false?'off':p.latinStyle||'kemenag';if(p.focusMode)r.dataset.focus='';if(p.arabicSize)r.style.setProperty('--arabic-size',p.arabicSize+'rem');if(p.arabicFont)r.style.setProperty('--arabic-font',${JSON.stringify(Object.fromEntries(Object.entries(arabicFonts).map(([k, v]) => [k, v.family])))}[p.arabicFont]);var s=location.pathname.match(/^\\/surah\\/(\\d+)/);if(s)[tr,g].filter(function(x,i,a){return a.indexOf(x)===i}).forEach(function(x){pl('/quran/'+x+'/'+s[1]+'.json','fetch')})}catch(e){}`;
 
 /**
  * Fallbacks for the installed app's splash, which is pure CSS for its first
@@ -33,6 +38,9 @@ const prefsScript = `try{var p=JSON.parse(localStorage.getItem('quran:prefs')||'
 const standaloneScript = `try{var r=document.documentElement,s=navigator.standalone;if(s||matchMedia('(display-mode: standalone)').matches)r.classList.add('standalone');if(s)r.style.setProperty('--splash-shift',Math.max(0,screen.height-innerHeight)+'px')}catch(e){}`;
 
 export const Route = createRootRouteWithContext<RouterContext>()({
+  // Only surah pages are server-rendered (see the surah route); the rest of
+  // the app renders in the browser, as `defaultSsr: false` in start.ts says.
+  ssr: ({ matches }) => matches.some((match) => match.routeId === '/surah/$surah'),
   // Child routes render on the client only, so their head() never reaches
   // the server HTML; the root builds every page's title and tags instead.
   head: ({ matches }) => {

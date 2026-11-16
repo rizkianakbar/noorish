@@ -1,19 +1,22 @@
 /**
- * Downloads the Quran text, word-by-word glosses, translations, and tafsir
- * into `public/quran/` as static JSON the reader loads on demand.
+ * Downloads the Quran text, word-by-word glosses, translations, and tafsir.
+ * Surahs go to `data/quran/` with every language in one file; `bun
+ * quran:build` (run after this by `bun quran:fetch`) splits them into the
+ * files the reader loads. Tafsir goes straight to `public/quran/tafsir/`.
  *
  * Usage: `bun quran:fetch` (pass `--force` to refetch files that already exist).
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { Chapter, SurahData, TafsirData, TafsirEntry, Verse } from '#/lib/quran/types.ts';
+import type { Chapter, SourceSurah, TafsirData, TafsirEntry } from '#/lib/quran/types.ts';
 
 const QURAN_API = 'https://api.quran.com/api/v4';
 const QDC_API = 'https://api.qurancdn.com/api/qdc';
 const EQURAN_API = 'https://equran.id/api/v2';
 
 const OUT_DIR = join(import.meta.dirname, '../public/quran');
+const SURAH_DIR = join(import.meta.dirname, '../data/quran');
 // Bundled into the app (page titles need it on the server), so not under public/.
 const CHAPTERS_PATH = join(import.meta.dirname, '../src/lib/quran/chapters.json');
 // Bundled too: reading plans count in mushaf pages before any surah file loads.
@@ -140,7 +143,7 @@ interface SurahResources {
   transliteration: Resource;
 }
 
-async function fetchSurah(surah: number, resources: SurahResources): Promise<SurahData> {
+async function fetchSurah(surah: number, resources: SurahResources): Promise<SourceSurah> {
   const ids = [resources.en.id, resources.id.id, resources.transliteration.id];
   const [enVerses, idVerses, kemenagLatin] = await Promise.all([
     fetchVersePages(surah, 'en', ids),
@@ -151,7 +154,7 @@ async function fetchSurah(surah: number, resources: SurahResources): Promise<Sur
     throw new Error(`Surah ${surah}: Kemenag Latin has ${kemenagLatin.length} verses, expected ${enVerses.length}`);
   }
 
-  const verses: Verse[] = enVerses.map((v, i) => {
+  const verses: SourceSurah['verses'] = enVerses.map((v, i) => {
     const idWords = idVerses[i].words.filter((w) => w.char_type_name === 'word');
     const words = v.words
       .filter((w) => w.char_type_name === 'word')
@@ -227,7 +230,7 @@ async function fetchIfMissing(path: string, fetcher: () => Promise<unknown>, isC
 function pageStarts(chapters: Chapter[]): [number, number][] {
   const starts: [number, number][] = [];
   for (const chapter of chapters) {
-    const { verses } = JSON.parse(readFileSync(join(OUT_DIR, `${chapter.number}.json`), 'utf8')) as SurahData;
+    const { verses } = JSON.parse(readFileSync(join(SURAH_DIR, `${chapter.number}.json`), 'utf8')) as SourceSurah;
     for (const verse of verses) {
       if (verse.page > starts.length) starts.push([chapter.number, verse.n]);
     }
@@ -245,6 +248,7 @@ function isCurrentSurahFile(path: string): boolean {
 }
 
 async function main() {
+  await mkdir(SURAH_DIR, { recursive: true });
   await mkdir(join(OUT_DIR, 'tafsir/ibn-kathir'), { recursive: true });
   await mkdir(join(OUT_DIR, 'tafsir/kemenag'), { recursive: true });
 
@@ -266,7 +270,7 @@ async function main() {
   let verseTotal = 0;
   for (const chapter of chapters) {
     const n = chapter.number;
-    const surahPath = join(OUT_DIR, `${n}.json`);
+    const surahPath = join(SURAH_DIR, `${n}.json`);
     await fetchIfMissing(
       surahPath,
       async () => {
@@ -286,7 +290,7 @@ async function main() {
 
   if (verseTotal !== TOTAL_VERSES) throw new Error(`Expected ${TOTAL_VERSES} verses, got ${verseTotal}`);
   await writeJson(PAGES_PATH, pageStarts(chapters));
-  console.log(`\nDone — ${verseTotal} verses written to ${OUT_DIR}`);
+  console.log(`\nDone — ${verseTotal} verses written to ${SURAH_DIR}`);
 }
 
 await main();
