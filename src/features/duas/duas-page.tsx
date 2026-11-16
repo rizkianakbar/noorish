@@ -1,14 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation } from '@tanstack/react-router';
-import { AArrowDown, AArrowUp, Play, Search } from 'lucide-react';
+import { Play, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Lattice } from '#/components/ornament/lattice.tsx';
 import { PageShell } from '#/components/page-shell.tsx';
+import { TextSizeButtons } from '#/components/text-size-buttons.tsx';
 import { Input } from '#/components/ui/input.tsx';
 import { Toggle } from '#/components/ui/toggle.tsx';
 import { parseQuery } from '#/features/search/search.lib.ts';
 import { useT } from '#/lib/i18n.ts';
-import { setPref, stepArabicSize, usePrefs } from '#/lib/prefs.ts';
+import { setPref, usePrefs } from '#/lib/prefs.ts';
 import { duaQueries } from './duas.api.ts';
 import { CATEGORY_ARABIC, DUA_URL_SLUGS, groupDailyDuas, isSaid, ROUTINE_CATEGORIES, searchDuas } from './duas.lib.ts';
 import { useSaidToday } from './duas.store.ts';
@@ -35,24 +36,7 @@ function ReadingControls() {
         onPressedChange={(on) => setPref('translation', on ? 'auto' : 'off')}>
         {t.translation}
       </Toggle>
-      <div className="ml-auto flex items-center gap-1">
-        <button
-          type="button"
-          aria-label={t.duaTextSmaller}
-          title={t.duaTextSmaller}
-          onClick={() => stepArabicSize(-1)}
-          className="pressable flex size-10 items-center justify-center rounded-full text-muted-foreground hover:bg-muted [&_svg]:size-5">
-          <AArrowDown />
-        </button>
-        <button
-          type="button"
-          aria-label={t.duaTextLarger}
-          title={t.duaTextLarger}
-          onClick={() => stepArabicSize(1)}
-          className="pressable flex size-10 items-center justify-center rounded-full text-muted-foreground hover:bg-muted [&_svg]:size-5">
-          <AArrowUp />
-        </button>
-      </div>
+      <TextSizeButtons className="ml-auto" />
     </div>
   );
 }

@@ -124,3 +124,41 @@ export function searchHadith(
         .slice(0, limit * 2);
   return { texts: textHits, books };
 }
+
+/**
+ * How a scholar's grading reads at a glance: authentic, good, or weak (and
+ * worse), else unknown. Gradings come in many spellings ("Sahih", "Hasan
+ * Sahih", "Da'if Jiddan", "Maudu`").
+ */
+export function gradeStrength(grade: string): 'sahih' | 'hasan' | 'weak' | null {
+  const g = grade.toLowerCase();
+  if (/da.?if|daif|weak|maud|mawd|munkar|shadh|fabricat|batil|lemah|palsu/.test(g)) return 'weak';
+  if (g.includes('hasan')) return 'hasan';
+  if (g.includes('sahih') || g.includes('shahih')) return 'sahih';
+  return null;
+}
+
+/**
+ * A translation split into its opening "Narrated Abu Huraira:" line (set
+ * apart, as the chain it stands for) and the hadith itself.
+ */
+export function splitNarrator(text: string): { narrator: string | null; body: string } {
+  const match = text.match(/^\s*(Narrated [^:\n]{2,90}:)\s*/);
+  return match ? { narrator: match[1], body: text.slice(match[0].length) } : { narrator: null, body: text };
+}
+
+/**
+ * Hadith whose translation or Arabic has every term, for finding one in a
+ * book of hundreds.
+ */
+export function filterHadiths(hadiths: Hadith[], query: ParsedQuery): Hadith[] {
+  if (!query.terms.length && !query.arabic) return hadiths;
+  const number = query.terms.length === 1 && /^\d+$/.test(query.terms[0]) ? Number(query.terms[0]) : null;
+  return hadiths.filter((h) =>
+    number !== null
+      ? Math.floor(h.number) === number
+      : query.arabic
+        ? !!h.arabic && normalizeArabic(h.arabic).includes(query.arabic)
+        : !!h.translation && matchesAll(h.translation, query.terms, expandTopic),
+  );
+}
