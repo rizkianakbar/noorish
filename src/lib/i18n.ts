@@ -145,8 +145,8 @@ const en = {
   reminderLater: 'Not now',
   reminderRemindIn: 'Or remind me in',
   reminderSnoozed: (time: string) => `I’ll remind you at ${time}, in sha Allah.`,
-  pushSnoozeTitle: (prayer: string) => `${prayer}: your reminder`,
-  pushSnoozeBody: (left: string) => `You asked to be reminded. There’s ${left} left to pray.`,
+  pushSnoozeTitle: (prayer: string) => `${prayer} is still waiting`,
+  pushSnoozeBody: (left: string) => `You said later. It’s later now, with ${left} left.`,
   // Al-Baqarah 2:238, Saheeh International, as in public/quran/2.json.
   reminderVerse:
     'Maintain with care the [obligatory] prayers and [in particular] the middle [i.e., ʿaṣr] prayer and stand before Allāh, devoutly obedient.',
@@ -168,12 +168,12 @@ const en = {
   prayerLastCall: 'Before the time ends',
   prayerLastCallHint: 'Nudge me 20 minutes before a prayer’s time is over, unless I’ve already prayed it.',
   pushPrayed: 'I’ve prayed',
-  pushAdhanBody: (prayer: 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha', start: string, end: string) =>
+  pushAdhanBody: (prayer: 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha', end: string) =>
     prayer === 'fajr'
-      ? `Prayer is better than sleep. Fajr is from ${start} until sunrise at ${end}.`
-      : `Come to prayer. Its time is from ${start} to ${end}.`,
+      ? `Prayer is better than sleep. Until sunrise at ${end}.`
+      : `Come to prayer, come to success. Until ${end}.`,
   pushLastCallTitle: (prayer: string, minutes: number) => `${prayer} ends in ${minutes} min`,
-  pushLastCallBody: 'There’s still time. Pray now, before its time is over.',
+  pushLastCallBody: 'Whatever you’re doing can wait. This can’t.',
   history: 'Your prayers',
   historyHint: 'Tap a prayer to log it. Kept on this device.',
   historyStreak: (days: number) => (days === 1 ? '1 day' : `${days} days`),
@@ -576,8 +576,8 @@ const id: Messages = {
   reminderLater: 'Nanti',
   reminderRemindIn: 'Atau ingatkan lagi dalam',
   reminderSnoozed: (time) => `Nanti aku ingatkan lagi pukul ${time}, in sya Allah.`,
-  pushSnoozeTitle: (prayer) => `Pengingat ${prayer}`,
-  pushSnoozeBody: (left) => `Kamu minta diingatkan. Masih ada ${left} untuk shalat.`,
+  pushSnoozeTitle: (prayer) => `${prayer} masih menunggu`,
+  pushSnoozeBody: (left) => `Tadi kamu bilang nanti. Sekarang sudah nanti, sisa ${left}.`,
   // Al-Baqarah 2:238, terjemahan Kemenag, sesuai public/quran/2.json.
   reminderVerse: 'Peliharalah semua salat dan salat wusṭa. Dan laksanakanlah (salat) karena Allah dengan khusyuk.',
   reminderVerseRef: 'Al-Baqarah 2:238',
@@ -598,12 +598,12 @@ const id: Messages = {
   prayerLastCall: 'Sebelum waktu habis',
   prayerLastCallHint: 'Ingatkan 20 menit sebelum waktu shalat habis, kecuali sudah shalat.',
   pushPrayed: 'Sudah shalat',
-  pushAdhanBody: (prayer, start, end) =>
+  pushAdhanBody: (prayer, end) =>
     prayer === 'fajr'
-      ? `Shalat lebih baik daripada tidur. Waktu Subuh ${start} sampai terbit ${end}.`
-      : `Mari shalat. Waktunya ${start} sampai ${end}.`,
+      ? `Shalat lebih baik daripada tidur. Sampai terbit pukul ${end}.`
+      : `Mari shalat, mari menuju kemenangan. Sampai pukul ${end}.`,
   pushLastCallTitle: (prayer, minutes) => `Waktu ${prayer} tinggal ${minutes} menit`,
-  pushLastCallBody: 'Masih ada waktu. Shalatlah sekarang, sebelum waktunya habis.',
+  pushLastCallBody: 'Apa pun yang sedang kamu kerjakan bisa menunggu. Shalat tidak.',
   history: 'Catatan shalat',
   historyHint: 'Ketuk shalat untuk mencatatnya. Disimpan di perangkat ini.',
   historyStreak: (days) => `${days} hari`,

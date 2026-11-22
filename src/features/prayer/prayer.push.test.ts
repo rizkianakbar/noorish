@@ -29,9 +29,9 @@ describe('buildSchedule', () => {
   it('adds the reminder asked for, with the time left then', () => {
     const until = now.getTime() + 30 * 60_000;
     const items = buildSchedule(JAKARTA, SETTINGS, {}, { id: '2026-10-23:asr', until }, now);
-    const reminder = items.find((item) => item.payload.title === 'Asr: your reminder');
+    const reminder = items.find((item) => item.payload.title === 'Asr is still waiting');
     expect(reminder?.sendAt).toBe(new Date(until).toISOString());
-    expect(reminder?.payload.body).toMatch(/There’s \d+ h \d+ min left|There’s \d+ min left/);
+    expect(reminder?.payload.body).toMatch(/with (\d+ h )?\d+ min left/);
   });
 
   it('drops a reminder past the prayer’s end, and everything once it’s logged', () => {

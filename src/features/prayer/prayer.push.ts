@@ -86,7 +86,7 @@ export function buildSchedule(
     add(prayer.start, {
       ...base,
       title: `${name} · ${ARABIC_NAMES[prayer.name]}`,
-      body: t.pushAdhanBody(prayer.name, time.format(prayer.start), time.format(prayer.end)),
+      body: t.pushAdhanBody(prayer.name, time.format(prayer.end)),
     });
 
     const minutes = (prayer.end.getTime() - prayer.start.getTime()) / 60_000;
